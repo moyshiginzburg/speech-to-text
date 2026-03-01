@@ -849,23 +849,25 @@ async function startRec() {
 }
 
 async function getOneTimeToken() {
-  // Step 1: Exchange API key for a single-use token (required for browser WebSocket)
-  const resp = await fetch('https://api.elevenlabs.io/v1/tokens/single-use', {
+  // Correct endpoint: POST /v1/single-use-token/realtime_scribe
+  const resp = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
     method: 'POST',
     headers: {
       'xi-api-key': apiKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ scope: 'realtime_scribe' }),
   });
   if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
     const status = resp.status;
+    const body = await resp.text().catch(() => '');
+    console.error('Token fetch failed:', status, body);
     if (status === 401 || status === 403) throw new Error('auth');
-    throw new Error('token_fetch_failed: ' + status);
+    throw new Error('token_fetch_failed: ' + status + ' ' + body.slice(0,80));
   }
   const data = await resp.json();
-  return data.token || data.value || data.id; // handle different response shapes
+  console.log('Token response:', JSON.stringify(data));
+  // Try all common field names
+  return data.token || data.value || data.id || data.access_token || Object.values(data)[0];
 }
 
 async function connectWS() {
