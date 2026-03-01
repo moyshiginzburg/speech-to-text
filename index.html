@@ -848,30 +848,62 @@ async function startRec() {
   connectWS();
 }
 
-function buildWsUrl() {
+async function getOneTimeToken() {
+  // Step 1: Exchange API key for a single-use token (required for browser WebSocket)
+  const resp = await fetch('https://api.elevenlabs.io/v1/tokens/single-use', {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ scope: 'realtime_scribe' }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    const status = resp.status;
+    if (status === 401 || status === 403) throw new Error('auth');
+    throw new Error('token_fetch_failed: ' + status);
+  }
+  const data = await resp.json();
+  return data.token || data.value || data.id; // handle different response shapes
+}
+
+async function connectWS() {
+  if (!isRec) return;
+
+  let token;
+  try {
+    showToast('⏳ מתחבר…');
+    token = await getOneTimeToken();
+  } catch(e) {
+    console.error('Token error:', e);
+    if (e.message === 'auth') {
+      showToast('❌ מפתח API שגוי', 'err', 5000);
+      stopRec(); changeKey();
+    } else {
+      showToast('❌ שגיאה בהתחברות: ' + e.message, 'err', 5000);
+      stopRec();
+    }
+    return;
+  }
+
   const lang = document.getElementById('langSel').value;
-  // ElevenLabs accepts xi_api_key as query param for browser WebSocket
-  // (browser WebSocket cannot send custom headers)
   const params = new URLSearchParams({
     model_id: 'scribe_v2_realtime',
     language_code: lang,
     punctuate: settings.punct ? 'true' : 'false',
     include_language_detection: settings.langDetect ? 'true' : 'false',
-    xi_api_key: apiKey,
+    token: token,  // single-use token instead of API key
   });
-  return `wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`;
-}
 
-function connectWS() {
-  if (!isRec) return;
-  ws = new WebSocket(buildWsUrl());
+  ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`);
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
     connectedOnce = true;
     reconnectAttempts = 0;
     startAudioPipeline();
-    if (reconnectAttempts > 0) showToast('✅ התחבר מחדש', 'ok');
+    showToast('🎙️ מחובר ומאזין', 'ok', 1500);
   };
   ws.onmessage = handleWsMessage;
   ws.onerror   = (e) => console.error('WS error:', e);
@@ -924,11 +956,12 @@ function handleWsClose(e) {
   }
 
   // Unexpected drop during session — try reconnect (limited)
+  // Each reconnect needs a fresh token — tokens are single-use
   if (reconnectAttempts < MAX_RECONNECT) {
     reconnectAttempts++;
     showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
     if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
-    setTimeout(() => { if (isRec) connectWS(); }, 1500);
+    setTimeout(() => { if (isRec) connectWS(); }, 1500); // connectWS fetches a new token
   } else {
     showToast('❌ החיבור נפסק לאחר ' + MAX_RECONNECT + ' ניסיונות', 'err', 5000);
     stopRec();
