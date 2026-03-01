@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>כתיבה קולית — ElevenLabs Scribe v2</title>
+<title>כתיבה קולית</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@300;400;600&family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -18,606 +18,196 @@
   --accent-soft: rgba(181,69,27,0.1);
   --border: #ddd8d0;
   --green: #2d7a3a;
-  --shadow-paper: 0 4px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
-  --radius: 10px;
-  --topbar-h: 56px;
+  --shadow: 0 4px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  --r: 10px;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);background-image:radial-gradient(circle at 20% 80%,rgba(181,69,27,0.05) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(181,69,27,0.04) 0%,transparent 50%);min-height:100vh;direction:rtl;color:var(--ink);-webkit-text-size-adjust:100%;}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── TOPBAR ── */
+.topbar{height:56px;background:rgba(255,253,249,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:200;}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.brand-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.brand-name{font-size:15px;font-weight:600;color:var(--accent);letter-spacing:-0.3px;white-space:nowrap;}
+.doc-name{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Heebo',sans-serif;font-size:14px;color:var(--ink);direction:rtl;text-overflow:ellipsis;overflow:hidden;padding:4px 6px;border-radius:5px;transition:background .15s;}
+.doc-name:hover{background:rgba(0,0,0,0.04);}
+.doc-name:focus{background:rgba(181,69,27,0.07);}
+.topbar-btns{display:flex;gap:6px;flex-shrink:0;}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.icon-btn:hover{background:var(--accent-soft);border-color:var(--accent);}
+.icon-btn:active{transform:scale(.93);}
 
-body {
-  font-family: 'Heebo', sans-serif;
-  background: var(--bg);
-  background-image: radial-gradient(circle at 20% 80%, rgba(181,69,27,0.05) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 20%, rgba(181,69,27,0.04) 0%, transparent 50%);
-  min-height: 100vh;
-  direction: rtl;
-  color: var(--ink);
-  -webkit-text-size-adjust: 100%;
-}
+/* ── WELCOME OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(240,235,227,0.97);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.overlay.hidden{display:none;}
+.welcome-card{background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding:32px 28px;max-width:460px;width:100%;}
+.welcome-card h2{font-size:22px;font-weight:600;margin-bottom:6px;color:var(--ink);text-align:center;}
+.welcome-card .subtitle{font-size:13px;color:var(--ink-3);text-align:center;margin-bottom:24px;}
 
-/* ─── TOPBAR ─── */
-.topbar {
-  height: var(--topbar-h);
-  background: rgba(255,253,249,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-}
+/* Engine picker */
+.engine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.engine-opt{border:2px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
+.engine-opt:hover{border-color:var(--accent);background:var(--accent-soft);}
+.engine-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
+.engine-opt .eo-icon{font-size:28px;margin-bottom:6px;}
+.engine-opt .eo-name{font-size:13px;font-weight:600;color:var(--ink);}
+.engine-opt .eo-desc{font-size:11px;color:var(--ink-3);margin-top:2px;line-height:1.4;}
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.brand-mark {
-  width: 30px;
-  height: 30px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-}
-.brand-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: -0.3px;
-  white-space: nowrap;
-}
+/* API key section */
+.api-section{margin-bottom:16px;}
+.api-section label{font-size:13px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;}
+.api-input-wrap{position:relative;}
+.api-input{width:100%;padding:11px 40px 11px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:'Heebo',sans-serif;direction:ltr;text-align:left;outline:none;color:var(--ink);transition:border-color .2s;background:white;}
+.api-input:focus{border-color:var(--accent);}
+.api-input::placeholder{color:#bbb;}
+.eye-btn{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink-3);padding:4px;}
+.api-note{font-size:11px;color:var(--ink-3);background:rgba(181,69,27,0.06);border-radius:8px;padding:9px 10px;margin-bottom:16px;line-height:1.6;}
+.api-note a{color:var(--accent);text-decoration:none;}
 
-.doc-name {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'Heebo', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  direction: rtl;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  padding: 4px 6px;
-  border-radius: 5px;
-  transition: background 0.15s;
-}
-.doc-name:hover { background: rgba(0,0,0,0.04); }
-.doc-name:focus { background: rgba(181,69,27,0.07); }
+.btn-main{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;font-family:'Heebo',sans-serif;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(181,69,27,0.3);}
+.btn-main:active{transform:scale(.98);}
+.btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-.topbar-btns {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
+/* ── MAIN LAYOUT ── */
+.layout{display:flex;align-items:flex-start;gap:16px;padding:20px 16px;max-width:1100px;margin:0 auto;}
 
-.icon-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.icon-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
-.icon-btn:active { transform: scale(0.93); }
+/* ── DOCUMENT ── */
+.doc-wrap{flex:1;min-width:0;}
+.doc-paper{background:var(--paper);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;}
+.listen-banner{display:flex;align-items:center;gap:10px;padding:10px 20px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;font-size:13px;font-weight:500;max-height:0;overflow:hidden;transition:max-height .3s;}
+.listen-banner.active{max-height:48px;}
+.pulse{width:10px;height:10px;border-radius:50%;background:white;flex-shrink:0;position:relative;}
+.pulse::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);animation:pulse-ring 1.2s ease-out infinite;}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1;}100%{transform:scale(2.8);opacity:0;}}
+.interim-span{flex:1;font-style:italic;opacity:.88;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.editor{min-height:500px;padding:40px 52px;font-family:'Noto Serif Hebrew',serif;font-size:18px;line-height:2;color:var(--ink);direction:rtl;text-align:right;outline:none;word-wrap:break-word;white-space:pre-wrap;caret-color:var(--accent);}
+.editor:empty::before{content:attr(data-placeholder);color:var(--ink-3);font-style:italic;pointer-events:none;}
 
-/* ─── API KEY OVERLAY ─── */
-.api-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(240,235,227,0.97);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.api-overlay.hidden { display: none; }
+/* ── SIDEBAR ── */
+.sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+.card{background:var(--paper);border-radius:var(--r);box-shadow:0 1px 10px rgba(0,0,0,0.06);overflow:hidden;}
+.card-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);}
+.card-body{padding:14px;}
 
-.api-card {
-  background: var(--paper);
-  border-radius: 16px;
-  box-shadow: var(--shadow-paper);
-  padding: 32px 28px;
-  max-width: 420px;
-  width: 100%;
-  text-align: center;
-}
-.api-card-icon { font-size: 48px; margin-bottom: 16px; }
-.api-card h2 {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--ink);
-}
-.api-card p {
-  font-size: 14px;
-  color: var(--ink-3);
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
-.api-card p a { color: var(--accent); text-decoration: none; }
+/* Mic */
+.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.mic-btn{width:76px;height:76px;border-radius:50%;border:2px solid var(--border);background:white;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;user-select:none;}
+.mic-btn:hover{border-color:var(--accent);background:var(--accent-soft);}
+.mic-btn:active{transform:scale(.94);}
+.mic-btn.on{background:var(--accent);border-color:var(--accent);animation:mic-breathe 1.8s ease-in-out infinite;}
+@keyframes mic-breathe{0%,100%{box-shadow:0 0 0 8px rgba(181,69,27,.12),0 0 0 16px rgba(181,69,27,.05);}50%{box-shadow:0 0 0 12px rgba(181,69,27,.10),0 0 0 24px rgba(181,69,27,.04);}}
+.mic-label{font-size:12px;color:var(--ink-3);text-align:center;font-weight:500;line-height:1.4;}
+.mic-label.on{color:var(--accent);font-weight:600;}
+.wave{display:flex;gap:3px;align-items:center;height:32px;opacity:0;transition:opacity .3s;}
+.wave.on{opacity:1;}
+.wave-bar{width:3px;background:var(--accent);border-radius:2px;height:3px;}
+.wave.on .wave-bar:nth-child(1){animation:wave-a .9s ease-in-out infinite 0.0s;}
+.wave.on .wave-bar:nth-child(2){animation:wave-a .9s ease-in-out infinite .13s;}
+.wave.on .wave-bar:nth-child(3){animation:wave-a .9s ease-in-out infinite .26s;}
+.wave.on .wave-bar:nth-child(4){animation:wave-a .9s ease-in-out infinite .19s;}
+.wave.on .wave-bar:nth-child(5){animation:wave-a .9s ease-in-out infinite .06s;}
+.wave.on .wave-bar:nth-child(6){animation:wave-a .9s ease-in-out infinite .32s;}
+.wave.on .wave-bar:nth-child(7){animation:wave-a .9s ease-in-out infinite .09s;}
+@keyframes wave-a{0%,100%{height:3px;}50%{height:24px;}}
 
-.api-input-wrap {
-  position: relative;
-  margin-bottom: 12px;
-}
-.api-input {
-  width: 100%;
-  padding: 12px 40px 12px 12px;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: 'Heebo', sans-serif;
-  direction: ltr;
-  text-align: left;
-  outline: none;
-  color: var(--ink);
-  transition: border-color 0.2s;
-  background: white;
-}
-.api-input:focus { border-color: var(--accent); }
-.api-input::placeholder { color: #bbb; }
+/* Upload */
+.upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.upload-area:hover,.upload-area.drag{border-color:var(--accent);background:var(--accent-soft);}
+.upload-area p{font-size:12px;color:var(--ink-3);margin-top:4px;}
+.upload-icon{font-size:24px;}
+.upload-progress{display:none;margin-top:10px;}
+.upload-progress.show{display:block;}
+.progress-bar-wrap{background:#eee;border-radius:4px;height:6px;overflow:hidden;margin-top:6px;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:4px;width:0%;transition:width .3s;}
+.upload-status{font-size:11px;color:var(--ink-3);margin-top:4px;}
 
-.eye-btn {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: var(--ink-3);
-  padding: 4px;
-}
-
-.api-note {
-  font-size: 12px;
-  color: var(--ink-3);
-  margin-bottom: 20px;
-  line-height: 1.6;
-  background: rgba(181,69,27,0.06);
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.btn-main {
-  width: 100%;
-  padding: 13px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  font-family: 'Heebo', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-.btn-main:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(181,69,27,0.3); }
-.btn-main:active { transform: scale(0.98); }
-.btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-/* ─── MAIN LAYOUT ─── */
-.layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 20px 16px;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* ─── DOCUMENT ─── */
-.doc-wrap {
-  flex: 1;
-  min-width: 0;
-}
-
-.doc-paper {
-  background: var(--paper);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-paper);
-  overflow: hidden;
-  position: relative;
-}
-
-/* Listening banner */
-.listen-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height 0.3s ease;
-}
-.listen-banner.active { max-height: 48px; }
-
-.pulse {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: white;
-  flex-shrink: 0;
-  position: relative;
-}
-.pulse::after {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.4);
-  animation: pulse-ring 1.2s ease-out infinite;
-}
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity:1; }
-  100% { transform: scale(2.8); opacity:0; }
-}
-
-.interim-span {
-  flex: 1;
-  font-style: italic;
-  opacity: 0.88;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* Editor */
-.editor {
-  min-height: 500px;
-  padding: 40px 52px;
-  font-family: 'Noto Serif Hebrew', serif;
-  font-size: 18px;
-  line-height: 2;
-  color: var(--ink);
-  direction: rtl;
-  text-align: right;
-  outline: none;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  caret-color: var(--accent);
-}
-.editor:empty::before {
-  content: attr(data-placeholder);
-  color: var(--ink-3);
-  font-style: italic;
-  pointer-events: none;
-}
-
-/* ─── SIDEBAR ─── */
-.sidebar {
-  width: 260px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card {
-  background: var(--paper);
-  border-radius: var(--radius);
-  box-shadow: 0 1px 10px rgba(0,0,0,0.06);
-  overflow: hidden;
-}
-.card-head {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.card-body { padding: 14px; }
-
-/* Mic button */
-.mic-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.mic-btn {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: white;
-  font-size: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-.mic-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-.mic-btn:active { transform: scale(0.94); }
-.mic-btn.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 8px rgba(181,69,27,0.12), 0 0 0 16px rgba(181,69,27,0.05);
-  animation: mic-breathe 1.8s ease-in-out infinite;
-}
-.mic-btn.on:hover { box-shadow: 0 0 0 10px rgba(181,69,27,0.15), 0 0 0 20px rgba(181,69,27,0.06); }
-
-@keyframes mic-breathe {
-  0%, 100% { box-shadow: 0 0 0 8px rgba(181,69,27,0.12), 0 0 0 16px rgba(181,69,27,0.05); }
-  50% { box-shadow: 0 0 0 12px rgba(181,69,27,0.1), 0 0 0 24px rgba(181,69,27,0.04); }
-}
-
-.mic-label {
-  font-size: 12px;
-  color: var(--ink-3);
-  text-align: center;
-  font-weight: 500;
-  line-height: 1.4;
-}
-.mic-label.on { color: var(--accent); font-weight: 600; }
-
-/* Waveform */
-.wave {
-  display: flex;
-  gap: 3px;
-  align-items: center;
-  height: 32px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.wave.on { opacity: 1; }
-.wave-bar {
-  width: 3px;
-  background: var(--accent);
-  border-radius: 2px;
-  height: 3px;
-}
-.wave.on .wave-bar:nth-child(1) { animation: wave-anim 0.9s ease-in-out infinite 0.0s; }
-.wave.on .wave-bar:nth-child(2) { animation: wave-anim 0.9s ease-in-out infinite 0.13s; }
-.wave.on .wave-bar:nth-child(3) { animation: wave-anim 0.9s ease-in-out infinite 0.26s; }
-.wave.on .wave-bar:nth-child(4) { animation: wave-anim 0.9s ease-in-out infinite 0.19s; }
-.wave.on .wave-bar:nth-child(5) { animation: wave-anim 0.9s ease-in-out infinite 0.06s; }
-.wave.on .wave-bar:nth-child(6) { animation: wave-anim 0.9s ease-in-out infinite 0.32s; }
-.wave.on .wave-bar:nth-child(7) { animation: wave-anim 0.9s ease-in-out infinite 0.09s; }
-@keyframes wave-anim {
-  0%,100% { height: 3px; }
-  50% { height: 24px; }
-}
-
-/* Settings rows */
-.set-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #f5f2ee;
-  gap: 8px;
-}
-.set-row:last-child { border-bottom: none; }
-.set-label { font-size: 13px; color: var(--ink-2); font-weight: 500; }
-.set-val { font-size: 12px; color: var(--ink-3); }
-
-select {
-  font-family: 'Heebo', sans-serif;
-  font-size: 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: white;
-  color: var(--ink);
-  outline: none;
-  direction: rtl;
-  max-width: 120px;
-}
-select:focus { border-color: var(--accent); }
-
-/* Toggle */
-.tog {
-  width: 38px; height: 22px;
-  background: #ddd;
-  border-radius: 11px;
-  cursor: pointer;
-  border: none;
-  position: relative;
-  flex-shrink: 0;
-  transition: background 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-.tog::after {
-  content: '';
-  position: absolute;
-  width: 18px; height: 18px;
-  background: white;
-  border-radius: 50%;
-  top: 2px; right: 2px;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-}
-.tog.on { background: var(--accent); }
-.tog.on::after { transform: translateX(-16px); }
+/* Settings */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f2ee;gap:8px;}
+.set-row:last-child{border-bottom:none;}
+.set-label{font-size:13px;color:var(--ink-2);font-weight:500;}
+select{font-family:'Heebo',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:white;color:var(--ink);outline:none;direction:rtl;max-width:130px;}
+select:focus{border-color:var(--accent);}
+.tog{width:38px;height:22px;background:#ddd;border-radius:11px;cursor:pointer;border:none;position:relative;flex-shrink:0;transition:background .2s;-webkit-tap-highlight-color:transparent;}
+.tog::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:2px;right:2px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.tog.on{background:var(--accent);}
+.tog.on::after{transform:translateX(-16px);}
 
 /* Stats */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.stat-box {
-  background: #f9f7f4;
-  border-radius: 8px;
-  padding: 10px 8px;
-  text-align: center;
-}
-.stat-n {
-  font-family: 'Noto Serif Hebrew', serif;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--accent);
-  line-height: 1;
-}
-.stat-l {
-  font-size: 11px;
-  color: var(--ink-3);
-  margin-top: 3px;
-}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:#f9f7f4;border-radius:8px;padding:10px 8px;text-align:center;}
+.stat-n{font-family:'Noto Serif Hebrew',serif;font-size:24px;font-weight:600;color:var(--accent);line-height:1;}
+.stat-l{font-size:11px;color:var(--ink-3);margin-top:3px;}
 
-/* API key mini */
-.api-mini {
-  font-size: 11px;
-  color: var(--ink-3);
-  background: #f9f7f4;
-  border-radius: 7px;
-  padding: 8px 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.api-mini-key {
-  font-family: monospace;
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  direction: ltr;
-  max-width: 130px;
-}
-.api-mini-change {
-  color: var(--accent);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  font-family: 'Heebo', sans-serif;
-  -webkit-tap-highlight-color: transparent;
-}
+/* Engine badge */
+.engine-badge{font-size:11px;background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:3px 8px;font-weight:600;cursor:pointer;}
 
-/* ─── TOAST ─── */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 50%;
-  transform: translateX(50%) translateY(80px);
-  background: #222;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 14px;
-  z-index: 999;
-  transition: transform 0.3s;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.toast.show { transform: translateX(50%) translateY(0); }
-.toast.err { background: var(--accent); }
-.toast.ok { background: var(--green); }
+/* API mini */
+.api-mini{font-size:11px;color:var(--ink-3);background:#f9f7f4;border-radius:7px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.api-mini-key{font-family:monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;max-width:130px;}
+.api-mini-change{color:var(--accent);cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;background:none;border:none;font-family:'Heebo',sans-serif;}
 
-/* ─── MOBILE: floating mic + bottom drawer ─── */
-.mob-mic {
-  display: none;
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 300;
-}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:50%;transform:translateX(50%) translateY(80px);background:#222;color:white;padding:10px 18px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(50%) translateY(0);}
+.toast.err{background:var(--accent);}
+.toast.ok{background:var(--green);}
 
-.mob-mic-btn {
-  width: 70px; height: 70px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: white;
-  font-size: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 6px 24px rgba(181,69,27,0.4);
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-.mob-mic-btn.on {
-  animation: mob-pulse 1.5s ease-in-out infinite;
-  box-shadow: 0 6px 24px rgba(181,69,27,0.5), 0 0 0 0 rgba(181,69,27,0.3);
-}
-@keyframes mob-pulse {
-  0%,100% { box-shadow: 0 6px 24px rgba(181,69,27,0.4), 0 0 0 0 rgba(181,69,27,0.2); }
-  50% { box-shadow: 0 6px 30px rgba(181,69,27,0.5), 0 0 0 14px rgba(181,69,27,0.0); }
-}
+/* Mobile floating mic */
+.mob-mic{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:300;}
+.mob-mic-btn{width:70px;height:70px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 24px rgba(181,69,27,.4);transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.mob-mic-btn.on{animation:mob-pulse 1.5s ease-in-out infinite;}
+@keyframes mob-pulse{0%,100%{box-shadow:0 6px 24px rgba(181,69,27,.4),0 0 0 0 rgba(181,69,27,.2);}50%{box-shadow:0 6px 30px rgba(181,69,27,.5),0 0 0 14px rgba(181,69,27,.0);}}
 
-/* ─── RESPONSIVE ─── */
-@media (max-width: 700px) {
-  .layout { flex-direction: column; padding: 12px; }
-  .sidebar { display: none; }
-  .mob-mic { display: block; }
-  .editor {
-    padding: 24px 20px 100px;
-    font-size: 17px;
-  }
-  .topbar { padding: 0 12px; }
-  .brand-name { display: none; }
+/* Responsive */
+@media(max-width:700px){
+  .layout{flex-direction:column;padding:12px;}
+  .sidebar{display:none;}
+  .mob-mic{display:block;}
+  .editor{padding:24px 20px 100px;font-size:17px;}
+  .topbar{padding:0 12px;}
+  .brand-name{display:none;}
 }
-
-@media (min-width: 701px) {
-  .mob-mic { display: none !important; }
-}
+@media(min-width:701px){.mob-mic{display:none!important;}}
 </style>
 </head>
 <body>
 
-<!-- API KEY OVERLAY -->
-<div class="api-overlay" id="apiOverlay">
-  <div class="api-card">
-    <div class="api-card-icon">🔑</div>
+<!-- WELCOME / SETTINGS OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="welcome-card">
+    <div style="text-align:center;font-size:36px;margin-bottom:12px;">✍️</div>
     <h2>כתיבה קולית בעברית</h2>
-    <p>
-      מופעל על ידי <strong>ElevenLabs Scribe v2 Realtime</strong> — המודל המדויק ביותר בעולם לתמלול חי.<br>
-      הכנס את מפתח ה-API שלך כדי להתחיל.
-    </p>
+    <p class="subtitle">בחר מנוע תמלול והתחל לדבר</p>
 
-    <div class="api-input-wrap">
-      <input class="api-input" id="apiInput" type="password" placeholder="sk_..." autocomplete="off" autocapitalize="off" spellcheck="false" />
-      <button class="eye-btn" id="eyeBtn" onclick="toggleEye()">👁</button>
+    <!-- Engine selector -->
+    <div class="engine-grid">
+      <div class="engine-opt selected" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
+        <div class="eo-icon">⚡</div>
+        <div class="eo-name">ElevenLabs</div>
+        <div class="eo-desc">Scribe v2 Realtime<br>הכי מדויק, דורש API key</div>
+      </div>
+      <div class="engine-opt" id="opt-google" onclick="selectEngine('google')">
+        <div class="eo-icon">🔍</div>
+        <div class="eo-name">Google</div>
+        <div class="eo-desc">Web Speech API<br>חינם, Chrome בלבד</div>
+      </div>
     </div>
 
-    <div class="api-note">
-      🔒 המפתח נשמר רק בדפדפן שלך (localStorage) ולא נשלח לאף שרת אחר מלבד ElevenLabs.<br>
-      לא עוזב את המכשיר שלך.<br>
-      📌 צור מפתח חינם באתר 
-      <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io</a>
+    <!-- API key (shown only for ElevenLabs) -->
+    <div class="api-section" id="apiSection">
+      <label>🔑 API Key של ElevenLabs</label>
+      <div class="api-input-wrap">
+        <input class="api-input" id="apiInput" type="password" placeholder="sk_..." autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <button class="eye-btn" onclick="toggleEye()">👁</button>
+      </div>
+      <div class="api-note" style="margin-top:8px;">
+        🔒 נשמר רק בדפדפן שלך, לא עוזב את המכשיר.<br>
+        📌 צור מפתח ב: <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
+      </div>
     </div>
 
-    <button class="btn-main" id="startBtn" onclick="saveApiKey()">התחל להכתיב</button>
+    <button class="btn-main" id="startBtn" onclick="startApp()">התחל</button>
   </div>
 </div>
 
@@ -629,17 +219,15 @@ select:focus { border-color: var(--accent); }
   </div>
   <input class="doc-name" id="docName" type="text" value="מסמך חדש" />
   <div class="topbar-btns">
-    <button class="icon-btn" onclick="copyAll()" title="העתק הכול">📋</button>
-    <button class="icon-btn" onclick="download()" title="הורד כקובץ">💾</button>
+    <button class="icon-btn" onclick="copyAll()" title="העתק">📋</button>
+    <button class="icon-btn" onclick="download()" title="הורד">💾</button>
     <button class="icon-btn" onclick="clearAll()" title="נקה">🗑️</button>
-    <button class="icon-btn" onclick="changeKey()" title="החלף API key">🔑</button>
+    <button class="icon-btn" onclick="openOverlay()" title="הגדרות">⚙️</button>
   </div>
 </div>
 
-<!-- MAIN LAYOUT -->
+<!-- LAYOUT -->
 <div class="layout">
-
-  <!-- Document -->
   <div class="doc-wrap">
     <div class="doc-paper">
       <div class="listen-banner" id="listenBanner">
@@ -647,51 +235,56 @@ select:focus { border-color: var(--accent); }
         <span>מאזין…</span>
         <span class="interim-span" id="interimSpan"></span>
       </div>
-      <div
-        class="editor"
-        id="editor"
-        contenteditable="true"
-        spellcheck="false"
-        dir="rtl"
-        data-placeholder="לחץ על המיקרופון והתחל לדבר…"
-      ></div>
+      <div class="editor" id="editor" contenteditable="true" spellcheck="false" dir="rtl"
+           data-placeholder="לחץ על המיקרופון והתחל לדבר…"></div>
     </div>
   </div>
 
-  <!-- Sidebar (desktop only) -->
   <div class="sidebar">
 
-    <!-- Mic -->
+    <!-- Mic card -->
     <div class="card">
-      <div class="card-head">🎙️ מיקרופון</div>
+      <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>🎙️ מיקרופון</span>
+        <span class="engine-badge" id="engineBadge" onclick="openOverlay()">ElevenLabs</span>
+      </div>
       <div class="card-body">
         <div class="mic-wrap">
           <button class="mic-btn" id="micBtn" onclick="toggleRec()">🎙️</button>
           <div class="wave" id="wave">
-            <div class="wave-bar"></div><div class="wave-bar"></div>
-            <div class="wave-bar"></div><div class="wave-bar"></div>
-            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
             <div class="wave-bar"></div>
           </div>
           <div class="mic-label" id="micLabel">לחץ להתחיל הכתבה</div>
-          <small style="font-size:10px;color:var(--ink-3);text-align:center;">
-            Space = התחל/עצור
-          </small>
+          <small style="font-size:10px;color:var(--ink-3);">Space = התחל/עצור</small>
         </div>
       </div>
     </div>
 
-    <!-- Settings -->
+    <!-- File upload card -->
+    <div class="card" id="uploadCard">
+      <div class="card-head">📁 תמלול קובץ</div>
+      <div class="card-body">
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <div class="upload-icon">🎵</div>
+          <strong style="font-size:13px;">לחץ או גרור קובץ</strong>
+          <p>MP3, WAV, M4A, OGG, OPUS, FLAC, WEBM, MP4</p>
+        </div>
+        <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.opus,.flac,.webm,.mp4,.mpeg,.mpga"
+               style="display:none" onchange="onFileSelect(event)" />
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="upload-status" id="uploadStatus">מעבד…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings card -->
     <div class="card">
       <div class="card-head">⚙️ הגדרות</div>
-      <div class="card-body" style="padding: 6px 14px;">
-        <div class="set-row">
-          <span class="set-label">מנוע</span>
-          <select id="engineSel" onchange="onEngineChange()">
-            <option value="elevenlabs" selected>ElevenLabs ✨</option>
-            <option value="google">Google (חינם)</option>
-          </select>
-        </div>
+      <div class="card-body" style="padding:6px 14px;">
         <div class="set-row">
           <span class="set-label">שפה</span>
           <select id="langSel">
@@ -706,14 +299,10 @@ select:focus { border-color: var(--accent); }
           <span class="set-label">ניקוד אוטומטי</span>
           <button class="tog on" id="togPunct" onclick="togField('punct','togPunct')"></button>
         </div>
-        <div class="set-row">
-          <span class="set-label">זיהוי שפה אוטומטי</span>
-          <button class="tog" id="togLangDetect" onclick="togField('langDetect','togLangDetect')"></button>
-        </div>
       </div>
     </div>
 
-    <!-- Stats -->
+    <!-- Stats card -->
     <div class="card">
       <div class="card-head">📊 סטטיסטיקות</div>
       <div class="card-body">
@@ -726,18 +315,17 @@ select:focus { border-color: var(--accent); }
       </div>
     </div>
 
-    <!-- Key info -->
+    <!-- API key mini (ElevenLabs only) -->
     <div class="card" id="apiKeyCard">
-      <div class="card-head">🔑 API Key (ElevenLabs)</div>
+      <div class="card-head">🔑 ElevenLabs API Key</div>
       <div class="card-body">
         <div class="api-mini">
           <span class="api-mini-key" id="keyPreview">—</span>
-          <button class="api-mini-change" onclick="changeKey()">החלף</button>
+          <button class="api-mini-change" onclick="openOverlay()">החלף</button>
         </div>
         <p style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
           מודל: <strong>scribe_v2_realtime</strong><br>
-          השרת: <strong>ElevenLabs</strong><br>
-          שפות: 90+
+          קבצים: <strong>scribe_v2</strong>
         </p>
       </div>
     </div>
@@ -745,17 +333,16 @@ select:focus { border-color: var(--accent); }
   </div>
 </div>
 
-<!-- Floating mobile mic -->
 <div class="mob-mic">
   <button class="mob-mic-btn" id="mobMicBtn" onclick="toggleRec()">🎙️</button>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── STATE ───────────────────────────────────────────────────────────────────
+// ── STATE ──────────────────────────────────────────────────────────────────
 let apiKey = '';
+let engine = 'elevenlabs'; // 'elevenlabs' | 'google'
 let isRec = false;
 let ws = null;
 let audioCtx = null;
@@ -763,13 +350,15 @@ let processor = null;
 let mediaStream = null;
 let recSeconds = 0;
 let timerInt = null;
+let gRecognition = null;
+let commitTimer = null;
+let lastPartial = '';
+let reconnectAttempts = 0;
+let connectedOnce = false;
+const MAX_RECONNECT = 3;
+const settings = { punct: true };
 
-const settings = {
-  punct: true,
-  langDetect: false,
-};
-
-// ─── ELEMENTS ────────────────────────────────────────────────────────────────
+// ── ELEMENTS ───────────────────────────────────────────────────────────────
 const editor    = document.getElementById('editor');
 const micBtn    = document.getElementById('micBtn');
 const mobMicBtn = document.getElementById('mobMicBtn');
@@ -778,215 +367,166 @@ const wave      = document.getElementById('wave');
 const banner    = document.getElementById('listenBanner');
 const interim   = document.getElementById('interimSpan');
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
+// ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem('el_api_key');
-  if (saved) {
-    apiKey = saved;
-    document.getElementById('apiOverlay').classList.add('hidden');
-    updateKeyPreview();
-  }
+  const savedKey = localStorage.getItem('el_api_key');
+  const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
+  selectEngine(savedEngine, true);
+  if (savedKey) { apiKey = savedKey; document.getElementById('apiInput').value = savedKey; }
   loadText();
   editor.addEventListener('input', () => { updateStats(); saveText(); });
+  // Auto-open overlay on first visit
+  if (!localStorage.getItem('el_started')) { openOverlay(); }
+  else { document.getElementById('overlay').classList.add('hidden'); updateUI(); }
 });
 
-// ─── API KEY ─────────────────────────────────────────────────────────────────
-function saveApiKey() {
-  const v = document.getElementById('apiInput').value.trim();
-  if (!v || v.length < 10) { showToast('מפתח לא תקין', 'err'); return; }
-  apiKey = v;
-  localStorage.setItem('el_api_key', v);
-  document.getElementById('apiOverlay').classList.add('hidden');
-  updateKeyPreview();
-  showToast('✅ מפתח נשמר', 'ok');
-}
-function changeKey() {
+// ── OVERLAY ────────────────────────────────────────────────────────────────
+function openOverlay() {
   if (isRec) stopRec();
-  document.getElementById('apiInput').value = apiKey;
-  document.getElementById('apiOverlay').classList.remove('hidden');
+  document.getElementById('overlay').classList.remove('hidden');
 }
+
+function selectEngine(e, silent) {
+  engine = e;
+  document.getElementById('opt-elevenlabs').classList.toggle('selected', e === 'elevenlabs');
+  document.getElementById('opt-google').classList.toggle('selected', e === 'google');
+  document.getElementById('apiSection').style.display = e === 'elevenlabs' ? '' : 'none';
+  if (!silent) localStorage.setItem('el_engine', e);
+}
+
+function startApp() {
+  if (engine === 'elevenlabs') {
+    const v = document.getElementById('apiInput').value.trim();
+    if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
+    apiKey = v;
+    localStorage.setItem('el_api_key', v);
+  }
+  localStorage.setItem('el_engine', engine);
+  localStorage.setItem('el_started', '1');
+  document.getElementById('overlay').classList.add('hidden');
+  updateUI();
+}
+
+function updateUI() {
+  const isEL = engine === 'elevenlabs';
+  document.getElementById('engineBadge').textContent = isEL ? 'ElevenLabs' : 'Google';
+  document.getElementById('apiKeyCard').style.display = isEL ? '' : 'none';
+  document.getElementById('uploadCard').style.display = isEL ? '' : 'none';
+  updateKeyPreview();
+}
+
+function updateKeyPreview() {
+  const el = document.getElementById('keyPreview');
+  el.textContent = apiKey ? apiKey.slice(0,8)+'••••'+apiKey.slice(-4) : '—';
+}
+
 function toggleEye() {
   const inp = document.getElementById('apiInput');
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
-function updateKeyPreview() {
-  const el = document.getElementById('keyPreview');
-  if (!apiKey) { el.textContent = '—'; return; }
-  el.textContent = apiKey.slice(0,8) + '••••••' + apiKey.slice(-4);
-}
 
-// ─── SETTINGS TOGGLES ────────────────────────────────────────────────────────
+// ── SETTINGS ───────────────────────────────────────────────────────────────
 function togField(field, btnId) {
   settings[field] = !settings[field];
   document.getElementById(btnId).classList.toggle('on', settings[field]);
 }
 
-// ─── ENGINE SWITCHING ────────────────────────────────────────────────────────
-let currentEngine = 'elevenlabs';
-
-function onEngineChange() {
-  currentEngine = document.getElementById('engineSel').value;
-  // Update API key card visibility
-  const keyCard = document.getElementById('apiKeyCard');
-  if (keyCard) keyCard.style.display = currentEngine === 'elevenlabs' ? '' : 'none';
-}
-
-// ─── MIC TOGGLE ──────────────────────────────────────────────────────────────
+// ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (currentEngine === 'elevenlabs' && !apiKey) { changeKey(); return; }
+  if (engine === 'elevenlabs' && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
 
-// ─── START RECORDING ─────────────────────────────────────────────────────────
-let reconnectAttempts = 0;
-const MAX_RECONNECT = 3;
-let connectedOnce = false;
-
-// Google STT
-let gRecognition = null;
-
-async function startRec() {
-  if (currentEngine === 'google') { startGoogle(); return; }
-  startElevenLabs();
+function startRec() {
+  engine === 'google' ? startGoogle() : startElevenLabs();
 }
 
+// ── GOOGLE STT ─────────────────────────────────────────────────────────────
 function startGoogle() {
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) {
-    showToast('❌ Google STT דורש Chrome', 'err'); return;
-  }
-  const langMap = { heb:'he-IL', ara:'ar-IL', eng:'en-US', rus:'ru-RU', fra:'fr-FR' };
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('❌ Google STT דורש Chrome', 'err'); return; }
+  const langMap = {heb:'he-IL',ara:'ar-IL',eng:'en-US',rus:'ru-RU',fra:'fr-FR'};
   const lang = langMap[document.getElementById('langSel').value] || 'he-IL';
-
-  gRecognition = new SpeechRec();
+  gRecognition = new SR();
   gRecognition.lang = lang;
   gRecognition.continuous = true;
   gRecognition.interimResults = true;
-
   gRecognition.onstart = () => {
-    isRec = true;
-    setRecUI(true);
-    timerInt = setInterval(() => {
-      recSeconds++;
-      document.getElementById('sm').textContent = Math.floor(recSeconds / 60);
-    }, 1000);
+    isRec = true; setRecUI(true);
+    timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
   };
-
   gRecognition.onresult = (event) => {
-    let finalText = '';
-    let interimText = '';
+    let fin = '', intm = '';
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const t = event.results[i][0].transcript;
-      if (event.results[i].isFinal) finalText += t + ' ';
-      else interimText = t;
+      if (event.results[i].isFinal) fin += t + ' ';
+      else intm = t;
     }
-    if (finalText) { interim.textContent = ''; insertText(finalText); saveText(); }
-    else if (interimText) interim.textContent = interimText;
+    if (fin) { interim.textContent = ''; insertText(fin); saveText(); }
+    else if (intm) interim.textContent = intm;
   };
-
-  gRecognition.onend = () => {
-    if (isRec) gRecognition.start(); // auto-restart
-  };
-
+  gRecognition.onend = () => { if (isRec) gRecognition.start(); };
   gRecognition.onerror = (e) => {
     if (e.error === 'not-allowed') { showToast('❌ גישה למיקרופון נדחתה', 'err'); stopRec(); }
   };
-
   gRecognition.start();
 }
 
+// ── ELEVENLABS STT ─────────────────────────────────────────────────────────
 async function startElevenLabs() {
-  reconnectAttempts = 0;
-  connectedOnce = false;
-
+  reconnectAttempts = 0; connectedOnce = false;
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 }
+      audio: {echoCancellation:true, noiseSuppression:true, sampleRate:16000}
     });
-  } catch(e) {
-    showToast('❌ גישה למיקרופון נדחתה', 'err'); return;
-  }
-
-  // Mark as recording immediately so UI updates
-  isRec = true;
-  setRecUI(true);
-  timerInt = setInterval(() => {
-    recSeconds++;
-    document.getElementById('sm').textContent = Math.floor(recSeconds / 60);
-  }, 1000);
-
+  } catch(e) { showToast('❌ גישה למיקרופון נדחתה', 'err'); return; }
+  isRec = true; setRecUI(true);
+  timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
   connectWS();
 }
 
-async function getOneTimeToken() {
-  // Correct endpoint: POST /v1/single-use-token/realtime_scribe
-  const resp = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
-    method: 'POST',
-    headers: {
-      'xi-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
+async function getToken() {
+  const r = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
+    method:'POST', headers:{'xi-api-key':apiKey,'Content-Type':'application/json'}
   });
-  if (!resp.ok) {
-    const status = resp.status;
-    const body = await resp.text().catch(() => '');
-    console.error('Token fetch failed:', status, body);
-    if (status === 401 || status === 403) throw new Error('auth');
-    throw new Error('token_fetch_failed: ' + status + ' ' + body.slice(0,80));
+  if (!r.ok) {
+    const s = r.status;
+    if (s === 401 || s === 403) throw new Error('auth');
+    throw new Error('token_fetch_failed: ' + s);
   }
-  const data = await resp.json();
-  console.log('Token response:', JSON.stringify(data));
-  // Try all common field names
-  return data.token || data.value || data.id || data.access_token || Object.values(data)[0];
+  const d = await r.json();
+  return d.token || d.value || d.id || Object.values(d)[0];
 }
 
 async function connectWS() {
   if (!isRec) return;
-
   let token;
   try {
     showToast('⏳ מתחבר…');
-    token = await getOneTimeToken();
+    token = await getToken();
   } catch(e) {
-    console.error('Token error:', e);
-    if (e.message === 'auth') {
-      showToast('❌ מפתח API שגוי', 'err', 5000);
-      stopRec(); changeKey();
-    } else {
-      showToast('❌ שגיאה בהתחברות: ' + e.message, 'err', 5000);
-      stopRec();
-    }
+    if (e.message === 'auth') { showToast('❌ מפתח API שגוי', 'err', 5000); stopRec(); openOverlay(); }
+    else showToast('❌ ' + e.message, 'err', 5000);
+    if (!connectedOnce) stopRec();
     return;
   }
-
   const lang = document.getElementById('langSel').value;
   const params = new URLSearchParams({
     model_id: 'scribe_v2_realtime',
     language_code: lang,
     punctuate: settings.punct ? 'true' : 'false',
-    include_language_detection: settings.langDetect ? 'true' : 'false',
-    token: token,  // single-use token instead of API key
+    token
   });
-
   ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`);
   ws.binaryType = 'arraybuffer';
-
-  ws.onopen = () => {
-    connectedOnce = true;
-    reconnectAttempts = 0;
-    startAudioPipeline();
-    showToast('🎙️ מחובר ומאזין', 'ok', 1500);
-  };
-  ws.onmessage = handleWsMessage;
-  ws.onerror   = (e) => console.error('WS error:', e);
-  ws.onclose   = handleWsClose;
+  ws.onopen = () => { connectedOnce = true; reconnectAttempts = 0; startAudioPipeline(); showToast('🎙️ מחובר', 'ok', 1200); };
+  ws.onmessage = handleWsMsg;
+  ws.onerror = (e) => console.error('WS error:', e);
+  ws.onclose = handleWsClose;
 }
 
-let commitTimer = null;
-let lastPartial = '';
-
+// ── PARTIAL COMMIT LOGIC ───────────────────────────────────────────────────
 function scheduleCommit(text) {
-  // If no committed_transcript arrives within 1200ms of last partial → commit it ourselves
   clearTimeout(commitTimer);
   lastPartial = text;
   commitTimer = setTimeout(() => {
@@ -1009,135 +549,72 @@ function flushPending() {
   }
 }
 
-function handleWsMessage(e) {
+function handleWsMsg(e) {
   try {
     const msg = JSON.parse(e.data);
-
     if (msg.message_type === 'partial_transcript' && msg.text) {
       interim.textContent = msg.text;
       scheduleCommit(msg.text);
-
-    } else if (
-      (msg.message_type === 'committed_transcript' ||
-       msg.message_type === 'committed_transcript_with_timestamps') && msg.text
-    ) {
-      // Got a real commit — cancel our timer and use ElevenLabs' version
-      clearTimeout(commitTimer);
-      lastPartial = '';
+    } else if ((msg.message_type === 'committed_transcript' || msg.message_type === 'committed_transcript_with_timestamps') && msg.text) {
+      clearTimeout(commitTimer); lastPartial = '';
       interim.textContent = '';
       insertText(msg.text + ' ');
       saveText();
-
-    } else if (msg.message_type === 'session_started') {
-      console.log('Session started OK');
-
     } else if (msg.message_type === 'error') {
-      console.error('ElevenLabs error:', msg);
-      const authErr = msg.code === 'authentication_error' || msg.code === 'invalid_api_key';
-      if (authErr) {
-        showToast('❌ מפתח API שגוי', 'err');
-        stopRec(); changeKey();
+      console.error('EL error:', msg);
+      if (msg.code === 'authentication_error' || msg.code === 'invalid_api_key') {
+        showToast('❌ מפתח API שגוי', 'err'); stopRec(); openOverlay();
       }
     }
-  } catch(err) {
-    console.error('Parse error:', err);
-  }
+  } catch(err) { console.error('Parse error:', err); }
 }
 
 function handleWsClose(e) {
   if (!isRec) return;
-  console.log('WS closed — code:', e.code, '| reason:', e.reason || '(none)');
-
-  // Auth failures — stop immediately
-  const authCodes = [1008, 4001, 4003, 4004];
-  if (authCodes.includes(e.code)) {
-    showToast('❌ מפתח API לא תקין (קוד ' + e.code + ')', 'err', 5000);
-    stopRec(); changeKey(); return;
-  }
-
-  // Normal / intentional close — don't reconnect
-  if (e.code === 1000 || e.code === 1001) {
-    if (isRec) stopRec();
-    return;
-  }
-
-  // Never connected at all = probably auth issue with different error code
-  if (!connectedOnce) {
-    showToast('❌ לא הצליח להתחבר — בדוק את ה-API key (קוד ' + e.code + ')', 'err', 6000);
-    stopRec(); changeKey(); return;
-  }
-
-  // Unexpected drop during session — try reconnect (limited)
-  // Each reconnect needs a fresh token — tokens are single-use
+  const authCodes = [1008,4001,4003,4004];
+  if (authCodes.includes(e.code)) { showToast('❌ מפתח API לא תקין ('+e.code+')', 'err', 5000); stopRec(); openOverlay(); return; }
+  if (e.code === 1000 || e.code === 1001) { if(isRec) stopRec(); return; }
+  if (!connectedOnce) { showToast('❌ לא הצליח להתחבר ('+e.code+')', 'err', 6000); stopRec(); openOverlay(); return; }
   if (reconnectAttempts < MAX_RECONNECT) {
     reconnectAttempts++;
-    showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
+    showToast('🔄 מתחבר מחדש ('+reconnectAttempts+'/'+MAX_RECONNECT+')…');
     if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
-    setTimeout(() => { if (isRec) connectWS(); }, 1500); // connectWS fetches a new token
-  } else {
-    showToast('❌ החיבור נפסק לאחר ' + MAX_RECONNECT + ' ניסיונות', 'err', 5000);
-    stopRec();
-  }
+    setTimeout(() => { if (isRec) connectWS(); }, 1500);
+  } else { showToast('❌ החיבור נפסק', 'err', 5000); stopRec(); }
 }
 
-// ─── AUDIO PIPELINE ──────────────────────────────────────────────────────────
+// ── AUDIO PIPELINE ─────────────────────────────────────────────────────────
 function startAudioPipeline() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:16000});
   const source = audioCtx.createMediaStreamSource(mediaStream);
-
-  // Use ScriptProcessor for broad compatibility (including Safari/mobile)
-  const bufferSize = 4096;
-  processor = audioCtx.createScriptProcessor(bufferSize, 1, 1);
-
+  processor = audioCtx.createScriptProcessor(4096, 1, 1);
   processor.onaudioprocess = (e) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    const float32 = e.inputBuffer.getChannelData(0);
-    const int16 = float32ToInt16(float32);
-    const b64 = arrayBufferToBase64(int16.buffer);
-    ws.send(JSON.stringify({
-      message_type: 'input_audio_chunk',
-      audio_base_64: b64,
-      sample_rate: 16000,
-    }));
+    const f32 = e.inputBuffer.getChannelData(0);
+    const i16 = new Int16Array(f32.length);
+    for (let i=0;i<f32.length;i++) { const s=Math.max(-1,Math.min(1,f32[i])); i16[i]=s<0?s*0x8000:s*0x7FFF; }
+    const bytes = new Uint8Array(i16.buffer);
+    let bin = ''; for (let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+    ws.send(JSON.stringify({message_type:'input_audio_chunk', audio_base_64:btoa(bin), sample_rate:16000}));
   };
-
   source.connect(processor);
   processor.connect(audioCtx.destination);
 }
 
-function float32ToInt16(float32Arr) {
-  const int16 = new Int16Array(float32Arr.length);
-  for (let i = 0; i < float32Arr.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32Arr[i]));
-    int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  return int16;
-}
-
-function arrayBufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-
-// ─── STOP RECORDING ──────────────────────────────────────────────────────────
+// ── STOP ───────────────────────────────────────────────────────────────────
 function stopRec() {
   isRec = false;
-  flushPending(); // commit any pending partial before stopping
-  // Stop Google STT if active
-  if (gRecognition) { try { gRecognition.stop(); } catch(e){} gRecognition = null; }
+  flushPending();
+  if (gRecognition) { try{gRecognition.stop();}catch(e){} gRecognition = null; }
+  if (processor) { processor.disconnect(); processor = null; }
+  if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream = null; }
+  if (ws && ws.readyState <= 1) { ws.close(); ws = null; }
   setRecUI(false);
   clearInterval(timerInt);
   interim.textContent = '';
-
-  if (processor) { processor.disconnect(); processor = null; }
-  if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-  if (ws && ws.readyState <= 1) { ws.close(); ws = null; }
 }
 
-// ─── UI STATE ─────────────────────────────────────────────────────────────────
 function setRecUI(on) {
   micBtn.classList.toggle('on', on);
   mobMicBtn.classList.toggle('on', on);
@@ -1149,47 +626,103 @@ function setRecUI(on) {
   banner.classList.toggle('active', on);
 }
 
-// ─── TEXT INSERT ──────────────────────────────────────────────────────────────
+// ── FILE UPLOAD (ElevenLabs Scribe v2 batch) ───────────────────────────────
+function onDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('drag'); }
+function onDragLeave(e) { document.getElementById('uploadArea').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+}
+function onFileSelect(e) { const f = e.target.files[0]; if(f) uploadFile(f); e.target.value=''; }
+
+async function uploadFile(file) {
+  if (!apiKey) { openOverlay(); return; }
+  const MAX_MB = 200;
+  if (file.size > MAX_MB * 1024 * 1024) { showToast(`❌ קובץ גדול מדי (מקסימום ${MAX_MB}MB)`, 'err'); return; }
+
+  const prog = document.getElementById('uploadProgress');
+  const bar  = document.getElementById('progressBar');
+  const stat = document.getElementById('uploadStatus');
+  prog.classList.add('show');
+  bar.style.width = '10%';
+  stat.textContent = `מעלה: ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
+
+  try {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('model_id', 'scribe_v2');
+    form.append('language_code', document.getElementById('langSel').value);
+    if (settings.punct) form.append('punctuate', 'true');
+
+    bar.style.width = '40%';
+    stat.textContent = 'שולח ל-ElevenLabs…';
+
+    const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey },
+      body: form
+    });
+
+    bar.style.width = '80%';
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.detail?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    bar.style.width = '100%';
+    stat.textContent = '✅ הושלם!';
+
+    const text = data.text || data.transcript || '';
+    if (text) {
+      insertText('\n\n— ' + file.name + ' —\n' + text + '\n');
+      saveText();
+      showToast('✅ תמלול הקובץ הושלם', 'ok', 3000);
+    } else {
+      showToast('⚠️ לא נמצא טקסט בקובץ', 'err');
+    }
+  } catch(e) {
+    stat.textContent = '❌ שגיאה: ' + e.message;
+    showToast('❌ ' + e.message, 'err', 5000);
+  }
+
+  setTimeout(() => { prog.classList.remove('show'); bar.style.width='0%'; }, 3000);
+}
+
+// ── TEXT ───────────────────────────────────────────────────────────────────
 function insertText(text) {
   if (!text.trim()) return;
   editor.focus();
   const sel = window.getSelection();
-  // If selection is inside editor, insert at cursor; else append at end
   if (sel.rangeCount && editor.contains(sel.anchorNode)) {
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    const node = document.createTextNode(text);
-    range.insertNode(node);
-    range.setStartAfter(node);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const r = sel.getRangeAt(0);
+    r.deleteContents();
+    const n = document.createTextNode(text);
+    r.insertNode(n); r.setStartAfter(n); r.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r);
   } else {
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const r = document.createRange();
+    r.selectNodeContents(editor); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
     document.execCommand('insertText', false, text);
   }
   updateStats();
   editor.scrollTop = editor.scrollHeight;
 }
 
-// ─── STATS ────────────────────────────────────────────────────────────────────
 function updateStats() {
   const t = editor.innerText || '';
-  const words = t.trim() ? t.trim().split(/\s+/).length : 0;
-  const chars  = t.replace(/\s/g,'').length;
-  const lines  = t.split('\n').filter(l => l.trim()).length || 0;
-  document.getElementById('sw').textContent = words;
-  document.getElementById('sc').textContent = chars;
-  document.getElementById('sl').textContent = lines;
+  const w = t.trim() ? t.trim().split(/\s+/).length : 0;
+  document.getElementById('sw').textContent = w;
+  document.getElementById('sc').textContent = t.replace(/\s/g,'').length;
+  document.getElementById('sl').textContent = t.split('\n').filter(l=>l.trim()).length;
 }
 
-// ─── PERSIST TEXT ─────────────────────────────────────────────────────────────
 function saveText() {
-  localStorage.setItem('el_doc_text', editor.innerText || '');
+  localStorage.setItem('el_doc_text', editor.innerText||'');
   localStorage.setItem('el_doc_name', document.getElementById('docName').value);
 }
 function loadText() {
@@ -1200,51 +733,33 @@ function loadText() {
 }
 document.getElementById('docName').addEventListener('input', saveText);
 
-// ─── ACTIONS ─────────────────────────────────────────────────────────────────
-function copyAll() {
-  navigator.clipboard.writeText(editor.innerText || '').then(() => showToast('✅ הועתק', 'ok'));
-}
+// ── ACTIONS ────────────────────────────────────────────────────────────────
+function copyAll() { navigator.clipboard.writeText(editor.innerText||'').then(()=>showToast('✅ הועתק','ok')); }
 function download() {
-  const name = document.getElementById('docName').value || 'כתיבה קולית';
-  const blob = new Blob([editor.innerText||''], { type:'text/plain;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name + '.txt';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast('💾 הורד', 'ok');
+  const n = document.getElementById('docName').value || 'כתיבה קולית';
+  const b = new Blob([editor.innerText||''],{type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=n+'.txt'; a.click(); URL.revokeObjectURL(a.href);
+  showToast('💾 הורד','ok');
 }
 function clearAll() {
   if (!(editor.innerText||'').trim()) return;
-  if (confirm('למחוק את כל הטקסט?')) {
-    editor.innerHTML = '';
-    saveText(); updateStats();
-    showToast('🗑️ נמחק');
-  }
+  if (confirm('למחוק את כל הטקסט?')) { editor.innerHTML=''; saveText(); updateStats(); showToast('🗑️ נמחק'); }
 }
 
-// ─── TOAST ────────────────────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────────────────────────────────────────
 function showToast(msg, type='', dur=2800) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.className = 'toast', dur);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast show ${type}`;
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',dur);
 }
 
-// ─── KEYBOARD ─────────────────────────────────────────────────────────────────
+// ── KEYBOARD ───────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && document.activeElement !== editor &&
-      !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) {
-    e.preventDefault();
-    toggleRec();
+  if (e.code==='Space' && document.activeElement!==editor && !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) {
+    e.preventDefault(); toggleRec();
   }
 });
-
-// ─── ENTER KEY ON API SCREEN ──────────────────────────────────────────────────
-document.getElementById('apiInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveApiKey();
-});
+document.getElementById('apiInput').addEventListener('keydown', e=>{ if(e.key==='Enter') startApp(); });
 </script>
 </body>
 </html>
