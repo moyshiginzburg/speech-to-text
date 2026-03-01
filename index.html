@@ -686,6 +686,13 @@ select:focus { border-color: var(--accent); }
       <div class="card-head">⚙️ הגדרות</div>
       <div class="card-body" style="padding: 6px 14px;">
         <div class="set-row">
+          <span class="set-label">מנוע</span>
+          <select id="engineSel" onchange="onEngineChange()">
+            <option value="elevenlabs" selected>ElevenLabs ✨</option>
+            <option value="google">Google (חינם)</option>
+          </select>
+        </div>
+        <div class="set-row">
           <span class="set-label">שפה</span>
           <select id="langSel">
             <option value="heb" selected>עברית</option>
@@ -720,8 +727,8 @@ select:focus { border-color: var(--accent); }
     </div>
 
     <!-- Key info -->
-    <div class="card">
-      <div class="card-head">🔑 API Key</div>
+    <div class="card" id="apiKeyCard">
+      <div class="card-head">🔑 API Key (ElevenLabs)</div>
       <div class="card-body">
         <div class="api-mini">
           <span class="api-mini-key" id="keyPreview">—</span>
@@ -814,9 +821,19 @@ function togField(field, btnId) {
   document.getElementById(btnId).classList.toggle('on', settings[field]);
 }
 
+// ─── ENGINE SWITCHING ────────────────────────────────────────────────────────
+let currentEngine = 'elevenlabs';
+
+function onEngineChange() {
+  currentEngine = document.getElementById('engineSel').value;
+  // Update API key card visibility
+  const keyCard = document.getElementById('apiKeyCard');
+  if (keyCard) keyCard.style.display = currentEngine === 'elevenlabs' ? '' : 'none';
+}
+
 // ─── MIC TOGGLE ──────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (!apiKey) { changeKey(); return; }
+  if (currentEngine === 'elevenlabs' && !apiKey) { changeKey(); return; }
   isRec ? stopRec() : startRec();
 }
 
@@ -825,7 +842,60 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT = 3;
 let connectedOnce = false;
 
+// Google STT
+let gRecognition = null;
+
 async function startRec() {
+  if (currentEngine === 'google') { startGoogle(); return; }
+  startElevenLabs();
+}
+
+function startGoogle() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    showToast('❌ Google STT דורש Chrome', 'err'); return;
+  }
+  const langMap = { heb:'he-IL', ara:'ar-IL', eng:'en-US', rus:'ru-RU', fra:'fr-FR' };
+  const lang = langMap[document.getElementById('langSel').value] || 'he-IL';
+
+  gRecognition = new SpeechRec();
+  gRecognition.lang = lang;
+  gRecognition.continuous = true;
+  gRecognition.interimResults = true;
+
+  gRecognition.onstart = () => {
+    isRec = true;
+    setRecUI(true);
+    timerInt = setInterval(() => {
+      recSeconds++;
+      document.getElementById('sm').textContent = Math.floor(recSeconds / 60);
+    }, 1000);
+  };
+
+  gRecognition.onresult = (event) => {
+    let finalText = '';
+    let interimText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalText += t + ' ';
+      else interimText = t;
+    }
+    if (finalText) { interim.textContent = ''; insertText(finalText); saveText(); }
+    else if (interimText) interim.textContent = interimText;
+  };
+
+  gRecognition.onend = () => {
+    if (isRec) gRecognition.start(); // auto-restart
+  };
+
+  gRecognition.onerror = (e) => {
+    if (e.error === 'not-allowed') { showToast('❌ גישה למיקרופון נדחתה', 'err'); stopRec(); }
+  };
+
+  gRecognition.start();
+}
+
+async function startElevenLabs() {
   reconnectAttempts = 0;
   connectedOnce = false;
 
@@ -912,25 +982,54 @@ async function connectWS() {
   ws.onclose   = handleWsClose;
 }
 
+let commitTimer = null;
+let lastPartial = '';
+
+function scheduleCommit(text) {
+  // If no committed_transcript arrives within 1200ms of last partial → commit it ourselves
+  clearTimeout(commitTimer);
+  lastPartial = text;
+  commitTimer = setTimeout(() => {
+    if (lastPartial && lastPartial.trim()) {
+      interim.textContent = '';
+      insertText(lastPartial + ' ');
+      saveText();
+      lastPartial = '';
+    }
+  }, 1200);
+}
+
+function flushPending() {
+  clearTimeout(commitTimer);
+  if (lastPartial && lastPartial.trim()) {
+    interim.textContent = '';
+    insertText(lastPartial + ' ');
+    saveText();
+    lastPartial = '';
+  }
+}
+
 function handleWsMessage(e) {
   try {
     const msg = JSON.parse(e.data);
-    // Log every message type so we can debug
-    console.log('WS msg:', msg.message_type, msg.text ? msg.text.slice(0,50) : '');
 
     if (msg.message_type === 'partial_transcript' && msg.text) {
       interim.textContent = msg.text;
+      scheduleCommit(msg.text);
 
     } else if (
       (msg.message_type === 'committed_transcript' ||
        msg.message_type === 'committed_transcript_with_timestamps') && msg.text
     ) {
+      // Got a real commit — cancel our timer and use ElevenLabs' version
+      clearTimeout(commitTimer);
+      lastPartial = '';
       interim.textContent = '';
       insertText(msg.text + ' ');
       saveText();
 
     } else if (msg.message_type === 'session_started') {
-      console.log('Session started OK:', JSON.stringify(msg).slice(0,100));
+      console.log('Session started OK');
 
     } else if (msg.message_type === 'error') {
       console.error('ElevenLabs error:', msg);
@@ -941,7 +1040,7 @@ function handleWsMessage(e) {
       }
     }
   } catch(err) {
-    console.error('Parse error:', err, e.data);
+    console.error('Parse error:', err);
   }
 }
 
@@ -1025,6 +1124,9 @@ function arrayBufferToBase64(buffer) {
 // ─── STOP RECORDING ──────────────────────────────────────────────────────────
 function stopRec() {
   isRec = false;
+  flushPending(); // commit any pending partial before stopping
+  // Stop Google STT if active
+  if (gRecognition) { try { gRecognition.stop(); } catch(e){} gRecognition = null; }
   setRecUI(false);
   clearInterval(timerInt);
   interim.textContent = '';
