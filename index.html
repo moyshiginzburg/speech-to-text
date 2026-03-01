@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -820,7 +821,14 @@ function toggleRec() {
 }
 
 // ─── START RECORDING ─────────────────────────────────────────────────────────
+let reconnectAttempts = 0;
+const MAX_RECONNECT = 3;
+let connectedOnce = false;
+
 async function startRec() {
+  reconnectAttempts = 0;
+  connectedOnce = false;
+
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 }
@@ -829,31 +837,44 @@ async function startRec() {
     showToast('❌ גישה למיקרופון נדחתה', 'err'); return;
   }
 
-  // Build WebSocket URL
+  // Mark as recording immediately so UI updates
+  isRec = true;
+  setRecUI(true);
+  timerInt = setInterval(() => {
+    recSeconds++;
+    document.getElementById('sm').textContent = Math.floor(recSeconds / 60);
+  }, 1000);
+
+  connectWS();
+}
+
+function buildWsUrl() {
   const lang = document.getElementById('langSel').value;
+  // ElevenLabs accepts xi_api_key as query param for browser WebSocket
+  // (browser WebSocket cannot send custom headers)
   const params = new URLSearchParams({
     model_id: 'scribe_v2_realtime',
     language_code: lang,
-    include_timestamps: 'false',
     punctuate: settings.punct ? 'true' : 'false',
     include_language_detection: settings.langDetect ? 'true' : 'false',
-    xi_api_key: apiKey,   // try as query param first
+    xi_api_key: apiKey,
   });
+  return `wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`;
+}
 
-  ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`);
+function connectWS() {
+  if (!isRec) return;
+  ws = new WebSocket(buildWsUrl());
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
-    isRec = true;
-    setRecUI(true);
+    connectedOnce = true;
+    reconnectAttempts = 0;
     startAudioPipeline();
-    timerInt = setInterval(() => {
-      recSeconds++;
-      document.getElementById('sm').textContent = Math.floor(recSeconds / 60);
-    }, 1000);
+    if (reconnectAttempts > 0) showToast('✅ התחבר מחדש', 'ok');
   };
   ws.onmessage = handleWsMessage;
-  ws.onerror   = handleWsError;
+  ws.onerror   = (e) => console.error('WS error:', e);
   ws.onclose   = handleWsClose;
 }
 
@@ -866,58 +887,52 @@ function handleWsMessage(e) {
       interim.textContent = '';
       insertText(msg.text + ' ');
       saveText();
+    } else if (msg.message_type === 'session_started') {
+      console.log('Session started:', msg);
     } else if (msg.message_type === 'error') {
       console.error('ElevenLabs error:', msg);
-      if (msg.code === 'authentication_error' || msg.code === 'invalid_api_key') {
+      const authErr = msg.code === 'authentication_error' || msg.code === 'invalid_api_key';
+      if (authErr) {
         showToast('❌ מפתח API שגוי', 'err');
         stopRec(); changeKey();
       }
     }
-  } catch(err) { /* ignore */ }
-}
-
-function handleWsError(e) {
-  // Don't stop here — onclose fires right after with the real reason
-  console.error('WS error:', e);
+  } catch(err) { /* ignore parse errors */ }
 }
 
 function handleWsClose(e) {
   if (!isRec) return;
-  console.log('WS closed, code:', e.code, e.reason);
-  if (e.code === 1008 || e.code === 4001 || e.code === 4003) {
-    showToast('❌ מפתח API לא תקין', 'err');
-    stopRec(); changeKey();
-  } else {
-    // Unexpected close — reconnect WITHOUT re-requesting microphone
-    showToast('🔄 מתחבר מחדש…');
-    setTimeout(() => { if (isRec) reconnect(); }, 1200);
+  console.log('WS closed — code:', e.code, '| reason:', e.reason || '(none)');
+
+  // Auth failures — stop immediately
+  const authCodes = [1008, 4001, 4003, 4004];
+  if (authCodes.includes(e.code)) {
+    showToast('❌ מפתח API לא תקין (קוד ' + e.code + ')', 'err', 5000);
+    stopRec(); changeKey(); return;
   }
-}
 
-function reconnect() {
-  if (!isRec) return;
-  if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
-  if (processor) { processor = null; }
-  // Reuse existing mediaStream — don't ask for mic permission again
-  reconnectWS();
-}
+  // Normal / intentional close — don't reconnect
+  if (e.code === 1000 || e.code === 1001) {
+    if (isRec) stopRec();
+    return;
+  }
 
-async function reconnectWS() {
-  if (!mediaStream || !isRec) return;
-  const lang = document.getElementById('langSel').value;
-  const params = new URLSearchParams({
-    model_id: 'scribe_v2_realtime',
-    language_code: lang,
-    punctuate: settings.punct ? 'true' : 'false',
-    include_language_detection: settings.langDetect ? 'true' : 'false',
-    xi_api_key: apiKey,
-  });
-  ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`);
-  ws.binaryType = 'arraybuffer';
-  ws.onopen = () => { startAudioPipeline(); };
-  ws.onmessage = handleWsMessage;
-  ws.onerror = handleWsError;
-  ws.onclose = handleWsClose;
+  // Never connected at all = probably auth issue with different error code
+  if (!connectedOnce) {
+    showToast('❌ לא הצליח להתחבר — בדוק את ה-API key (קוד ' + e.code + ')', 'err', 6000);
+    stopRec(); changeKey(); return;
+  }
+
+  // Unexpected drop during session — try reconnect (limited)
+  if (reconnectAttempts < MAX_RECONNECT) {
+    reconnectAttempts++;
+    showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
+    if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
+    setTimeout(() => { if (isRec) connectWS(); }, 1500);
+  } else {
+    showToast('❌ החיבור נפסק לאחר ' + MAX_RECONNECT + ' ניסיונות', 'err', 5000);
+    stopRec();
+  }
 }
 
 // ─── AUDIO PIPELINE ──────────────────────────────────────────────────────────
