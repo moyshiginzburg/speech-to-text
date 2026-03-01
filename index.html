@@ -915,14 +915,23 @@ async function connectWS() {
 function handleWsMessage(e) {
   try {
     const msg = JSON.parse(e.data);
+    // Log every message type so we can debug
+    console.log('WS msg:', msg.message_type, msg.text ? msg.text.slice(0,50) : '');
+
     if (msg.message_type === 'partial_transcript' && msg.text) {
       interim.textContent = msg.text;
-    } else if (msg.message_type === 'committed_transcript' && msg.text) {
+
+    } else if (
+      (msg.message_type === 'committed_transcript' ||
+       msg.message_type === 'committed_transcript_with_timestamps') && msg.text
+    ) {
       interim.textContent = '';
       insertText(msg.text + ' ');
       saveText();
+
     } else if (msg.message_type === 'session_started') {
-      console.log('Session started:', msg);
+      console.log('Session started OK:', JSON.stringify(msg).slice(0,100));
+
     } else if (msg.message_type === 'error') {
       console.error('ElevenLabs error:', msg);
       const authErr = msg.code === 'authentication_error' || msg.code === 'invalid_api_key';
@@ -931,7 +940,9 @@ function handleWsMessage(e) {
         stopRec(); changeKey();
       }
     }
-  } catch(err) { /* ignore parse errors */ }
+  } catch(err) {
+    console.error('Parse error:', err, e.data);
+  }
 }
 
 function handleWsClose(e) {
