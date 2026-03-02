@@ -376,7 +376,7 @@ const interim   = document.getElementById('interimSpan');
 window.addEventListener('load', () => {
   const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
   selectEngine(savedEngine, true);
-  // Load API key for the saved engine
+  // Load API key for the saved engine (Google needs no key)
   const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key' };
   const storageKey = keyMap[savedEngine];
   if (storageKey) {
@@ -717,6 +717,7 @@ function handleDgMsg(e) {
 
 function handleDgWsClose(e) {
   if (!isRec) return;
+  // 1008=policy violation, 4001/4003=auth errors
   if (e.code === 1008 || e.code === 4001 || e.code === 4003) {
     showToast('❌ מפתח API לא תקין (' + e.code + ')', 'err', 5000);
     stopRec(); openOverlay(); return;
@@ -795,7 +796,7 @@ async function uploadFile(file) {
       });
       const res = await fetch(`https://api.deepgram.com/v1/listen?${params}`, {
         method: 'POST',
-        headers: { 'Authorization': 'Token ' + apiKey, 'Content-Type': file.type || 'audio/mpeg' },
+        headers: { 'Authorization': 'Token ' + apiKey, 'Content-Type': file.type || 'application/octet-stream' },
         body: file
       });
       bar.style.width = '80%';
