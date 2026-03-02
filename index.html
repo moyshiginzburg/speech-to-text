@@ -40,12 +40,12 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);background-image:radial
 /* ── WELCOME OVERLAY ── */
 .overlay{position:fixed;inset:0;background:rgba(240,235,227,0.97);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
 .overlay.hidden{display:none;}
-.welcome-card{background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding:32px 28px;max-width:460px;width:100%;}
+.welcome-card{background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding:32px 28px;max-width:520px;width:100%;}
 .welcome-card h2{font-size:22px;font-weight:600;margin-bottom:6px;color:var(--ink);text-align:center;}
 .welcome-card .subtitle{font-size:13px;color:var(--ink-3);text-align:center;margin-bottom:24px;}
 
 /* Engine picker */
-.engine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.engine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
 .engine-opt{border:2px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
 .engine-opt:hover{border-color:var(--accent);background:var(--accent-soft);}
 .engine-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
@@ -185,7 +185,12 @@ select:focus{border-color:var(--accent);}
       <div class="engine-opt selected" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
         <div class="eo-icon">⚡</div>
         <div class="eo-name">ElevenLabs</div>
-        <div class="eo-desc">Scribe v2 Realtime<br>הכי מדויק, דורש API key</div>
+        <div class="eo-desc">Scribe v2 Realtime<br>מדויק, דורש API key</div>
+      </div>
+      <div class="engine-opt" id="opt-deepgram" onclick="selectEngine('deepgram')">
+        <div class="eo-icon">🎯</div>
+        <div class="eo-name">Deepgram</div>
+        <div class="eo-desc">Nova-3<br>מדויק, דורש API key</div>
       </div>
       <div class="engine-opt" id="opt-google" onclick="selectEngine('google')">
         <div class="eo-icon">🔍</div>
@@ -194,16 +199,16 @@ select:focus{border-color:var(--accent);}
       </div>
     </div>
 
-    <!-- API key (shown only for ElevenLabs) -->
+    <!-- API key (shown for engines that need it) -->
     <div class="api-section" id="apiSection">
-      <label>🔑 API Key של ElevenLabs</label>
+      <label id="apiLabel">🔑 API Key של ElevenLabs</label>
       <div class="api-input-wrap">
         <input class="api-input" id="apiInput" type="password" placeholder="sk_..." autocomplete="off" autocapitalize="off" spellcheck="false" />
         <button class="eye-btn" onclick="toggleEye()">👁</button>
       </div>
-      <div class="api-note" style="margin-top:8px;">
+      <div class="api-note" id="apiNote" style="margin-top:8px;">
         🔒 נשמר רק בדפדפן שלך, לא עוזב את המכשיר.<br>
-        📌 צור מפתח ב: <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
+        📌 צור מפתח ב: <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
       </div>
     </div>
 
@@ -315,15 +320,15 @@ select:focus{border-color:var(--accent);}
       </div>
     </div>
 
-    <!-- API key mini (ElevenLabs only) -->
+    <!-- API key mini (engines with API key) -->
     <div class="card" id="apiKeyCard">
-      <div class="card-head">🔑 ElevenLabs API Key</div>
+      <div class="card-head" id="apiKeyCardHead">🔑 ElevenLabs API Key</div>
       <div class="card-body">
         <div class="api-mini">
           <span class="api-mini-key" id="keyPreview">—</span>
           <button class="api-mini-change" onclick="openOverlay()">החלף</button>
         </div>
-        <p style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
+        <p id="modelInfo" style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
           מודל: <strong>scribe_v2_realtime</strong><br>
           קבצים: <strong>scribe_v2</strong>
         </p>
@@ -342,7 +347,7 @@ select:focus{border-color:var(--accent);}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let apiKey = '';
-let engine = 'elevenlabs'; // 'elevenlabs' | 'google'
+let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram'
 let isRec = false;
 let ws = null;
 let audioCtx = null;
@@ -369,10 +374,15 @@ const interim   = document.getElementById('interimSpan');
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  const savedKey = localStorage.getItem('el_api_key');
   const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
   selectEngine(savedEngine, true);
-  if (savedKey) { apiKey = savedKey; document.getElementById('apiInput').value = savedKey; }
+  // Load API key for the saved engine
+  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key' };
+  const storageKey = keyMap[savedEngine];
+  if (storageKey) {
+    const savedKey = localStorage.getItem(storageKey);
+    if (savedKey) { apiKey = savedKey; document.getElementById('apiInput').value = savedKey; }
+  }
   loadText();
   editor.addEventListener('input', () => { updateStats(); saveText(); });
   // Auto-open overlay on first visit
@@ -390,16 +400,33 @@ function selectEngine(e, silent) {
   engine = e;
   document.getElementById('opt-elevenlabs').classList.toggle('selected', e === 'elevenlabs');
   document.getElementById('opt-google').classList.toggle('selected', e === 'google');
-  document.getElementById('apiSection').style.display = e === 'elevenlabs' ? '' : 'none';
+  document.getElementById('opt-deepgram').classList.toggle('selected', e === 'deepgram');
+  const needsKey = (e === 'elevenlabs' || e === 'deepgram');
+  document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
+  // Update API section content per engine
+  if (e === 'elevenlabs') {
+    document.getElementById('apiLabel').textContent = '🔑 API Key של ElevenLabs';
+    document.getElementById('apiLink').href = 'https://elevenlabs.io/app/settings/api-keys';
+    document.getElementById('apiLink').textContent = 'elevenlabs.io/app/settings/api-keys';
+    document.getElementById('apiInput').placeholder = 'sk_...';
+    document.getElementById('apiInput').value = localStorage.getItem('el_api_key') || '';
+  } else if (e === 'deepgram') {
+    document.getElementById('apiLabel').textContent = '🔑 API Key של Deepgram';
+    document.getElementById('apiLink').href = 'https://console.deepgram.com/settings/api-keys';
+    document.getElementById('apiLink').textContent = 'console.deepgram.com/settings/api-keys';
+    document.getElementById('apiInput').placeholder = 'מפתח API...';
+    document.getElementById('apiInput').value = localStorage.getItem('dg_api_key') || '';
+  }
   if (!silent) localStorage.setItem('el_engine', e);
 }
 
 function startApp() {
-  if (engine === 'elevenlabs') {
+  if (engine === 'elevenlabs' || engine === 'deepgram') {
     const v = document.getElementById('apiInput').value.trim();
     if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
     apiKey = v;
-    localStorage.setItem('el_api_key', v);
+    if (engine === 'elevenlabs') localStorage.setItem('el_api_key', v);
+    else if (engine === 'deepgram') localStorage.setItem('dg_api_key', v);
   }
   localStorage.setItem('el_engine', engine);
   localStorage.setItem('el_started', '1');
@@ -409,9 +436,19 @@ function startApp() {
 
 function updateUI() {
   const isEL = engine === 'elevenlabs';
-  document.getElementById('engineBadge').textContent = isEL ? 'ElevenLabs' : 'Google';
-  document.getElementById('apiKeyCard').style.display = isEL ? '' : 'none';
-  document.getElementById('uploadCard').style.display = isEL ? '' : 'none';
+  const isDG = engine === 'deepgram';
+  const needsKey = isEL || isDG;
+  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google' };
+  document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
+  document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
+  document.getElementById('uploadCard').style.display = needsKey ? '' : 'none';
+  if (isEL) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>קבצים: <strong>scribe_v2</strong>';
+  } else if (isDG) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 Deepgram API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>nova-3</strong><br>שידור חי + קבצים';
+  }
   updateKeyPreview();
 }
 
@@ -433,12 +470,14 @@ function togField(field, btnId) {
 
 // ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (engine === 'elevenlabs' && !apiKey) { openOverlay(); return; }
+  if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
 
 function startRec() {
-  engine === 'google' ? startGoogle() : startElevenLabs();
+  if (engine === 'google') startGoogle();
+  else if (engine === 'deepgram') startDeepgram();
+  else startElevenLabs();
 }
 
 // ── GOOGLE STT ─────────────────────────────────────────────────────────────
@@ -601,6 +640,100 @@ function startAudioPipeline() {
   processor.connect(audioCtx.destination);
 }
 
+// ── DEEPGRAM STT ───────────────────────────────────────────────────────────
+const dgLangMap = {heb:'he', ara:'ar', eng:'en', rus:'ru', fra:'fr'};
+
+async function startDeepgram() {
+  reconnectAttempts = 0; connectedOnce = false;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {echoCancellation:true, noiseSuppression:true, sampleRate:16000}
+    });
+  } catch(e) { showToast('❌ גישה למיקרופון נדחתה', 'err'); return; }
+  isRec = true; setRecUI(true);
+  timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
+  connectDgWS();
+}
+
+function connectDgWS() {
+  if (!isRec) return;
+  const lang = dgLangMap[document.getElementById('langSel').value] || 'he';
+  const params = new URLSearchParams({
+    model: 'nova-3',
+    language: lang,
+    punctuate: settings.punct ? 'true' : 'false',
+    encoding: 'linear16',
+    channels: '1',
+    sample_rate: '16000',
+    interim_results: 'true',
+    utterance_end_ms: '1200',
+    token: apiKey
+  });
+  showToast('⏳ מתחבר…');
+  ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`);
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => { connectedOnce = true; reconnectAttempts = 0; startDgAudioPipeline(); showToast('🎙️ מחובר', 'ok', 1200); };
+  ws.onmessage = handleDgMsg;
+  ws.onerror = (e) => console.error('DG WS error:', e);
+  ws.onclose = handleDgWsClose;
+}
+
+function startDgAudioPipeline() {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:16000});
+  const source = audioCtx.createMediaStreamSource(mediaStream);
+  processor = audioCtx.createScriptProcessor(4096, 1, 1);
+  processor.onaudioprocess = (e) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const f32 = e.inputBuffer.getChannelData(0);
+    const i16 = new Int16Array(f32.length);
+    for (let i=0;i<f32.length;i++) { const s=Math.max(-1,Math.min(1,f32[i])); i16[i]=s<0?s*0x8000:s*0x7FFF; }
+    ws.send(i16.buffer);
+  };
+  source.connect(processor);
+  processor.connect(audioCtx.destination);
+}
+
+function handleDgMsg(e) {
+  try {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'Results') {
+      const transcript = msg.channel?.alternatives?.[0]?.transcript || '';
+      if (!transcript) return;
+      if (msg.is_final) {
+        clearTimeout(commitTimer); lastPartial = '';
+        interim.textContent = '';
+        insertText(transcript + ' ');
+        saveText();
+      } else {
+        interim.textContent = transcript;
+        scheduleCommit(transcript);
+      }
+    } else if (msg.type === 'Error') {
+      console.error('DG error:', msg);
+      showToast('❌ שגיאת Deepgram: ' + (msg.message || ''), 'err');
+    }
+  } catch(err) { console.error('DG parse error:', err); }
+}
+
+function handleDgWsClose(e) {
+  if (!isRec) return;
+  if (e.code === 1008 || e.code === 4001 || e.code === 4003) {
+    showToast('❌ מפתח API לא תקין (' + e.code + ')', 'err', 5000);
+    stopRec(); openOverlay(); return;
+  }
+  if (e.code === 1000 || e.code === 1001) { if (isRec) stopRec(); return; }
+  if (!connectedOnce) {
+    showToast('❌ לא הצליח להתחבר (' + e.code + ')', 'err', 6000);
+    stopRec(); openOverlay(); return;
+  }
+  if (reconnectAttempts < MAX_RECONNECT) {
+    reconnectAttempts++;
+    showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
+    if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
+    setTimeout(() => { if (isRec) connectDgWS(); }, 1500);
+  } else { showToast('❌ החיבור נפסק', 'err', 5000); stopRec(); }
+}
+
 // ── STOP ───────────────────────────────────────────────────────────────────
 function stopRec() {
   isRec = false;
@@ -626,7 +759,7 @@ function setRecUI(on) {
   banner.classList.toggle('active', on);
 }
 
-// ── FILE UPLOAD (ElevenLabs Scribe v2 batch) ───────────────────────────────
+// ── FILE UPLOAD (ElevenLabs / Deepgram batch) ──────────────────────────────
 function onDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('drag'); }
 function onDragLeave(e) { document.getElementById('uploadArea').classList.remove('drag'); }
 function onDrop(e) {
@@ -650,33 +783,52 @@ async function uploadFile(file) {
   stat.textContent = `מעלה: ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
 
   try {
-    const form = new FormData();
-    form.append('file', file, file.name);
-    form.append('model_id', 'scribe_v2');
-    form.append('language_code', document.getElementById('langSel').value);
-    if (settings.punct) form.append('punctuate', 'true');
-
     bar.style.width = '40%';
-    stat.textContent = 'שולח ל-ElevenLabs…';
 
-    const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-      method: 'POST',
-      headers: { 'xi-api-key': apiKey },
-      body: form
-    });
-
-    bar.style.width = '80%';
-
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.detail?.message || `HTTP ${res.status}`);
+    let text = '';
+    if (engine === 'deepgram') {
+      stat.textContent = 'שולח ל-Deepgram…';
+      const lang = dgLangMap[document.getElementById('langSel').value] || 'he';
+      const params = new URLSearchParams({
+        model: 'nova-3', language: lang,
+        punctuate: settings.punct ? 'true' : 'false'
+      });
+      const res = await fetch(`https://api.deepgram.com/v1/listen?${params}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Token ' + apiKey, 'Content-Type': file.type || 'audio/mpeg' },
+        body: file
+      });
+      bar.style.width = '80%';
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.err_msg || err.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      text = data.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+    } else {
+      stat.textContent = 'שולח ל-ElevenLabs…';
+      const form = new FormData();
+      form.append('file', file, file.name);
+      form.append('model_id', 'scribe_v2');
+      form.append('language_code', document.getElementById('langSel').value);
+      if (settings.punct) form.append('punctuate', 'true');
+      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+        method: 'POST',
+        headers: { 'xi-api-key': apiKey },
+        body: form
+      });
+      bar.style.width = '80%';
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.detail?.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      text = data.text || data.transcript || '';
     }
 
-    const data = await res.json();
     bar.style.width = '100%';
     stat.textContent = '✅ הושלם!';
 
-    const text = data.text || data.transcript || '';
     if (text) {
       insertText('\n\n— ' + file.name + ' —\n' + text + '\n');
       saveText();
