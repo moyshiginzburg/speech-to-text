@@ -197,6 +197,16 @@ select:focus{border-color:var(--accent);}
         <div class="eo-name">Google</div>
         <div class="eo-desc">Web Speech API<br>חינם, Chrome בלבד</div>
       </div>
+      <div class="engine-opt" id="opt-ivrit" onclick="selectEngine('ivrit')">
+        <div class="eo-icon">🇮🇱</div>
+        <div class="eo-name">ivrit.ai</div>
+        <div class="eo-desc">Whisper עברית<br>דיוק גבוה, קבצים בלבד</div>
+      </div>
+      <div class="engine-opt" id="opt-openai" onclick="selectEngine('openai')">
+        <div class="eo-icon">🤖</div>
+        <div class="eo-name">OpenAI</div>
+        <div class="eo-desc">Whisper-1<br>רב-שפתי, קבצים בלבד</div>
+      </div>
     </div>
 
     <!-- API key (shown for engines that need it) -->
@@ -377,7 +387,7 @@ window.addEventListener('load', () => {
   const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
   selectEngine(savedEngine, true);
   // Load API key for the saved engine (Google needs no key)
-  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key' };
+  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key' };
   const storageKey = keyMap[savedEngine];
   if (storageKey) {
     const savedKey = localStorage.getItem(storageKey);
@@ -401,7 +411,9 @@ function selectEngine(e, silent) {
   document.getElementById('opt-elevenlabs').classList.toggle('selected', e === 'elevenlabs');
   document.getElementById('opt-google').classList.toggle('selected', e === 'google');
   document.getElementById('opt-deepgram').classList.toggle('selected', e === 'deepgram');
-  const needsKey = (e === 'elevenlabs' || e === 'deepgram');
+  document.getElementById('opt-ivrit').classList.toggle('selected', e === 'ivrit');
+  document.getElementById('opt-openai').classList.toggle('selected', e === 'openai');
+  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai');
   document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
   // Update API section content per engine
   if (e === 'elevenlabs') {
@@ -416,17 +428,31 @@ function selectEngine(e, silent) {
     document.getElementById('apiLink').textContent = 'console.deepgram.com/settings/api-keys';
     document.getElementById('apiInput').placeholder = 'מפתח API...';
     document.getElementById('apiInput').value = localStorage.getItem('dg_api_key') || '';
+  } else if (e === 'ivrit') {
+    document.getElementById('apiLabel').textContent = '🔑 HuggingFace API Token';
+    document.getElementById('apiLink').href = 'https://huggingface.co/settings/tokens';
+    document.getElementById('apiLink').textContent = 'huggingface.co/settings/tokens';
+    document.getElementById('apiInput').placeholder = 'hf_...';
+    document.getElementById('apiInput').value = localStorage.getItem('ivrit_api_key') || '';
+  } else if (e === 'openai') {
+    document.getElementById('apiLabel').textContent = '🔑 OpenAI API Key';
+    document.getElementById('apiLink').href = 'https://platform.openai.com/api-keys';
+    document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
+    document.getElementById('apiInput').placeholder = 'sk-...';
+    document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
   }
   if (!silent) localStorage.setItem('el_engine', e);
 }
 
 function startApp() {
-  if (engine === 'elevenlabs' || engine === 'deepgram') {
+  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai') {
     const v = document.getElementById('apiInput').value.trim();
     if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
     apiKey = v;
     if (engine === 'elevenlabs') localStorage.setItem('el_api_key', v);
     else if (engine === 'deepgram') localStorage.setItem('dg_api_key', v);
+    else if (engine === 'ivrit') localStorage.setItem('ivrit_api_key', v);
+    else if (engine === 'openai') localStorage.setItem('openai_api_key', v);
   }
   localStorage.setItem('el_engine', engine);
   localStorage.setItem('el_started', '1');
@@ -437,8 +463,11 @@ function startApp() {
 function updateUI() {
   const isEL = engine === 'elevenlabs';
   const isDG = engine === 'deepgram';
-  const needsKey = isEL || isDG;
-  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google' };
+  const isIvrit = engine === 'ivrit';
+  const isOpenAI = engine === 'openai';
+  const needsKey = isEL || isDG || isIvrit || isOpenAI;
+  const fileOnly = isIvrit || isOpenAI;
+  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI' };
   document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
   document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
   document.getElementById('uploadCard').style.display = needsKey ? '' : 'none';
@@ -448,6 +477,15 @@ function updateUI() {
   } else if (isDG) {
     document.getElementById('apiKeyCardHead').textContent = '🔑 Deepgram API Key';
     document.getElementById('modelInfo').innerHTML = 'מודל: <strong>nova-3</strong><br>שידור חי + קבצים';
+  } else if (isIvrit) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 HuggingFace Token';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-large-v3-turbo-d4</strong><br>קבצים בלבד · עברית בלבד';
+  } else if (isOpenAI) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
+  }
+  if (fileOnly) {
+    micLabel.textContent = '🗂️ מנוע זה תומך בהעלאת קובץ בלבד';
   }
   updateKeyPreview();
 }
@@ -470,6 +508,7 @@ function togField(field, btnId) {
 
 // ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
+  if (engine === 'ivrit' || engine === 'openai') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
   if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
@@ -723,16 +762,13 @@ function handleDgWsClose(e) {
     stopRec(); openOverlay(); return;
   }
   if (e.code === 1000 || e.code === 1001) { if (isRec) stopRec(); return; }
-  if (!connectedOnce) {
-    showToast('❌ לא הצליח להתחבר (' + e.code + ')', 'err', 6000);
-    stopRec(); openOverlay(); return;
-  }
+  // For 1006 (abnormal closure) and other transient errors, attempt reconnect
   if (reconnectAttempts < MAX_RECONNECT) {
     reconnectAttempts++;
     showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
     if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
     setTimeout(() => { if (isRec) connectDgWS(); }, 1500);
-  } else { showToast('❌ החיבור נפסק', 'err', 5000); stopRec(); }
+  } else { showToast('❌ לא הצליח להתחבר (' + e.code + ')', 'err', 6000); stopRec(); }
 }
 
 // ── STOP ───────────────────────────────────────────────────────────────────
@@ -806,6 +842,44 @@ async function uploadFile(file) {
       }
       const data = await res.json();
       text = data.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+    } else if (engine === 'ivrit') {
+      stat.textContent = 'שולח ל-ivrit.ai (HuggingFace)…';
+      const res = await fetch('https://api-inference.huggingface.co/models/ivrit-ai/whisper-large-v3-turbo-d4', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': file.type || 'audio/wav' },
+        body: file
+      });
+      bar.style.width = '80%';
+      if (res.status === 503) {
+        const errData = await res.json().catch(()=>({}));
+        const wait = Math.ceil(errData.estimated_time || 20);
+        throw new Error(`המודל טוען (${wait} שניות). נסה שוב עוד רגע.`);
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      text = data.text || '';
+    } else if (engine === 'openai') {
+      stat.textContent = 'שולח ל-OpenAI Whisper…';
+      const form = new FormData();
+      form.append('file', file, file.name);
+      form.append('model', 'whisper-1');
+      const oaiLang = dgLangMap[document.getElementById('langSel').value];
+      if (oaiLang) form.append('language', oaiLang);
+      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + apiKey },
+        body: form
+      });
+      bar.style.width = '80%';
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      text = data.text || '';
     } else {
       stat.textContent = 'שולח ל-ElevenLabs…';
       const form = new FormData();
