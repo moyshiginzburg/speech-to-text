@@ -162,7 +162,8 @@ select:focus{border-color:var(--accent);}
 /* Responsive */
 @media(max-width:700px){
   .layout{flex-direction:column;padding:12px;}
-  .sidebar{display:none;}
+  .sidebar{width:100%;}
+  .sidebar > .card:first-child{display:none;}
   .mob-mic{display:block;}
   .editor{padding:24px 20px 100px;font-size:17px;}
   .topbar{padding:0 12px;}
