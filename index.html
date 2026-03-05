@@ -456,7 +456,7 @@
         document.getElementById('modelInfo').innerHTML = 'מודל: <strong>Azure Speech-to-Text</strong><br>אזור: <strong>' + azureRegion + '</strong> · קבצים בלבד';
       } else if (isGemini) {
         document.getElementById('apiKeyCardHead').textContent = '🔑 Google Gemini API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-2.0-flash</strong><br>תמלול LLM · קבצים בלבד';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-flash-latest</strong><br>תמלול LLM · קבצים בלבד';
       }
 
       if (fileOnly) {
@@ -699,7 +699,7 @@
           const base64Data = reader.result.split(',')[1];
           const mimeType = file.type;
 
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
           
           const response = await fetch(url, {
             method: 'POST',
