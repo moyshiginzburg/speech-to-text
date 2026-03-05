@@ -213,6 +213,16 @@ select:focus{border-color:var(--accent);}
         <div class="eo-name">Whisper מקומי</div>
         <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
       </div>
+      <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
+        <div class="eo-icon">☁️</div>
+        <div class="eo-name">Azure</div>
+        <div class="eo-desc">Speech-to-Text<br>מדויק, דורש API key</div>
+      </div>
+      <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
+        <div class="eo-icon">✨</div>
+        <div class="eo-name">Gemini AI</div>
+        <div class="eo-desc">תמלול מבוסס LLM<br>דורש API key</div>
+      </div>
     </div>
 
     <!-- Local model size selector (shown only when local engine is selected) -->
@@ -235,6 +245,7 @@ select:focus{border-color:var(--accent);}
       <div class="api-note" id="apiNote" style="margin-top:8px;">
         🔒 נשמר רק בדפדפן שלך, לא עוזב את המכשיר.<br>
         📌 צור מפתח ב: <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
+        <span id="apiKeyFormatNote" style="display:none;"><br>ℹ️ פורמט: <strong>KEY|REGION</strong> (לדוגמה: abc123...|eastus)</span>
       </div>
     </div>
 
@@ -431,7 +442,7 @@ window.addEventListener('load', () => {
   const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
   selectEngine(savedEngine, true);
   // Load API key for the saved engine (Google needs no key)
-  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key' };
+  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key', azure: 'azure_api_key', gemini: 'gemini_api_key' };
   const storageKey = keyMap[savedEngine];
   if (storageKey) {
     const savedKey = localStorage.getItem(storageKey);
@@ -458,8 +469,11 @@ function selectEngine(e, silent) {
   document.getElementById('opt-ivrit').classList.toggle('selected', e === 'ivrit');
   document.getElementById('opt-openai').classList.toggle('selected', e === 'openai');
   document.getElementById('opt-local').classList.toggle('selected', e === 'local');
-  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai');
+  document.getElementById('opt-azure').classList.toggle('selected', e === 'azure');
+  document.getElementById('opt-gemini').classList.toggle('selected', e === 'gemini');
+  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai' || e === 'azure' || e === 'gemini');
   document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
+  document.getElementById('apiKeyFormatNote').style.display = (e === 'azure') ? '' : 'none';
   // Update API section content per engine
   if (e === 'elevenlabs') {
     document.getElementById('apiLabel').textContent = '🔑 API Key של ElevenLabs';
@@ -485,6 +499,18 @@ function selectEngine(e, silent) {
     document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
     document.getElementById('apiInput').placeholder = 'sk-...';
     document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
+  } else if (e === 'azure') {
+    document.getElementById('apiLabel').textContent = '🔑 Azure Speech API Key';
+    document.getElementById('apiLink').href = 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices';
+    document.getElementById('apiLink').textContent = 'portal.azure.com — צור משאב Speech';
+    document.getElementById('apiInput').placeholder = 'abc123...|eastus';
+    document.getElementById('apiInput').value = localStorage.getItem('azure_api_key') || '';
+  } else if (e === 'gemini') {
+    document.getElementById('apiLabel').textContent = '🔑 Gemini API Key';
+    document.getElementById('apiLink').href = 'https://aistudio.google.com/app/apikey';
+    document.getElementById('apiLink').textContent = 'aistudio.google.com/app/apikey';
+    document.getElementById('apiInput').placeholder = 'AIza...';
+    document.getElementById('apiInput').value = localStorage.getItem('gemini_api_key') || '';
   }
   if (!silent) localStorage.setItem('el_engine', e);
   // Show/hide local model size section in overlay
@@ -509,7 +535,7 @@ function setLocalModelSize(size) {
 }
 
 function startApp() {
-  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai') {
+  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai' || engine === 'azure' || engine === 'gemini') {
     const v = document.getElementById('apiInput').value.trim();
     if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
     apiKey = v;
@@ -517,6 +543,8 @@ function startApp() {
     else if (engine === 'deepgram') localStorage.setItem('dg_api_key', v);
     else if (engine === 'ivrit') localStorage.setItem('ivrit_api_key', v);
     else if (engine === 'openai') localStorage.setItem('openai_api_key', v);
+    else if (engine === 'azure') localStorage.setItem('azure_api_key', v);
+    else if (engine === 'gemini') localStorage.setItem('gemini_api_key', v);
   }
   localStorage.setItem('el_engine', engine);
   localStorage.setItem('el_started', '1');
@@ -530,9 +558,11 @@ function updateUI() {
   const isIvrit = engine === 'ivrit';
   const isOpenAI = engine === 'openai';
   const isLocal = engine === 'local';
-  const needsKey = isEL || isDG || isIvrit || isOpenAI;
-  const fileOnly = isIvrit || isOpenAI || isLocal;
-  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי' };
+  const isAzure = engine === 'azure';
+  const isGemini = engine === 'gemini';
+  const needsKey = isEL || isDG || isIvrit || isOpenAI || isAzure || isGemini;
+  const fileOnly = isIvrit || isOpenAI || isLocal || isAzure || isGemini;
+  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי', azure: 'Azure', gemini: 'Gemini AI' };
   document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
   document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
   document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
@@ -554,6 +584,12 @@ function updateUI() {
   } else if (isOpenAI) {
     document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
     document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
+  } else if (isAzure) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 Azure API Key';
+    document.getElementById('modelInfo').innerHTML = 'מנוע: <strong>Fast Transcription</strong><br>קבצים בלבד · עד 4 שעות';
+  } else if (isGemini) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 Gemini API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-1.5-flash</strong><br>קבצים בלבד · תמלול AI';
   }
   if (fileOnly) {
     micLabel.textContent = '🗂️ מנוע זה תומך בהעלאת קובץ בלבד';
@@ -579,7 +615,7 @@ function togField(field, btnId) {
 
 // ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (engine === 'ivrit' || engine === 'openai' || engine === 'local') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
+  if (engine === 'ivrit' || engine === 'openai' || engine === 'local' || engine === 'azure' || engine === 'gemini') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
   if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
@@ -1000,6 +1036,119 @@ async function uploadFile(file) {
         stride_length_s: 5,
       });
       text = result.text || '';
+    } else if (engine === 'azure') {
+      // ── AZURE SPEECH FAST TRANSCRIPTION ──
+      stat.textContent = 'שולח ל-Azure Speech-to-Text…';
+      const azParts = apiKey.split('|');
+      const azKey = azParts[0]?.trim();
+      const azRegion = azParts[1]?.trim();
+      if (!azKey || !azRegion) {
+        throw new Error('הכנס את המפתח בפורמט: KEY|REGION (לדוגמה: abc123...|eastus)');
+      }
+      const azLangMap = { heb: 'he-IL', ara: 'ar-AE', eng: 'en-US', rus: 'ru-RU', fra: 'fr-FR' };
+      const azLocale = azLangMap[document.getElementById('langSel').value] || 'he-IL';
+      const azForm = new FormData();
+      azForm.append('audio', file, file.name);
+      azForm.append('definition', JSON.stringify({ locales: [azLocale], profanityFilterMode: 'None' }));
+      const azRes = await fetch(
+        `https://${azRegion}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15`,
+        { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': azKey }, body: azForm }
+      );
+      bar.style.width = '80%';
+      if (!azRes.ok) {
+        const err = await azRes.json().catch(()=>({}));
+        throw new Error(err.error?.message || `HTTP ${azRes.status}`);
+      }
+      const azData = await azRes.json();
+      text = (azData.combinedPhrases || []).map(p => p.text).join('\n') ||
+             (azData.phrases || []).map(p => p.text).join(' ') || '';
+    } else if (engine === 'gemini') {
+      // ── GEMINI AI TRANSCRIPTION ──
+      stat.textContent = 'שולח ל-Gemini AI…';
+      const GEMINI_INLINE_LIMIT = 15 * 1024 * 1024; // 15MB inline limit
+      const transcriptPrompt = 'Transcribe this audio word for word, including appropriate punctuation marks and line breaks. Return only the transcription with no additional explanation.';
+      let genParts;
+      if (file.size <= GEMINI_INLINE_LIMIT) {
+        // Inline base64 for small files
+        const arrBuf = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrBuf);
+        const chunks = [];
+        const CHUNK = 8192;
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+          chunks.push(String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, bytes.length))));
+        }
+        genParts = [
+          { inline_data: { mime_type: file.type || 'audio/wav', data: btoa(chunks.join('')) } },
+          { text: transcriptPrompt }
+        ];
+      } else {
+        // Files API for larger files
+        stat.textContent = 'מעלה קובץ ל-Gemini Files API…';
+        const startRes = await fetch(
+          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: {
+              'X-Goog-Upload-Protocol': 'resumable',
+              'X-Goog-Upload-Command': 'start',
+              'X-Goog-Upload-Header-Content-Length': String(file.size),
+              'X-Goog-Upload-Header-Content-Type': file.type || 'audio/wav',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ file: { display_name: file.name } })
+          }
+        );
+        if (!startRes.ok) {
+          const err = await startRes.json().catch(()=>({}));
+          throw new Error(err.error?.message || `שגיאת העלאה: HTTP ${startRes.status}`);
+        }
+        const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
+        if (!uploadUrl) throw new Error('לא התקבל URL להעלאה מ-Gemini');
+        bar.style.width = '50%';
+        stat.textContent = 'מעלה קובץ…';
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'X-Goog-Upload-Protocol': 'resumable',
+            'X-Goog-Upload-Command': 'upload, finalize',
+            'X-Goog-Upload-Offset': '0',
+            'Content-Length': String(file.size),
+            'Content-Type': file.type || 'audio/wav'
+          },
+          body: file
+        });
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(()=>({}));
+          throw new Error(err.error?.message || `שגיאת העלאה: HTTP ${uploadRes.status}`);
+        }
+        const fileData = await uploadRes.json();
+        const fileUri = fileData.file?.uri;
+        if (!fileUri) throw new Error('לא התקבל URI לקובץ מ-Gemini');
+        genParts = [
+          { file_data: { mime_type: file.type || 'audio/wav', file_uri: fileUri } },
+          { text: transcriptPrompt }
+        ];
+      }
+      bar.style.width = '75%';
+      stat.textContent = 'מתמלל עם Gemini…';
+      const genRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: genParts }],
+            generationConfig: { temperature: 0, maxOutputTokens: 8192 }
+          })
+        }
+      );
+      bar.style.width = '90%';
+      if (!genRes.ok) {
+        const err = await genRes.json().catch(()=>({}));
+        throw new Error(err.error?.message || `HTTP ${genRes.status}`);
+      }
+      const genData = await genRes.json();
+      text = genData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     } else {
       stat.textContent = 'שולח ל-ElevenLabs…';
       const form = new FormData();
