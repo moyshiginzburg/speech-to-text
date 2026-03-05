@@ -1,1357 +1,1181 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Speech To Text — תמלול חכם ומהיר</title>
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+  <title>STT Pro — תמלול חכם</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --ink: #1e293b;
-      --ink-light: #64748b;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --border: #e2e8f0;
-      --success: #10b981;
-      --danger: #ef4444;
-      --accent: #f1f5f9;
-    }
-
-    [data-theme="dark"] {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --ink: #f1f5f9;
-      --ink-light: #94a3b8;
-      --primary: #60a5fa;
-      --primary-hover: #3b82f6;
-      --border: #334155;
-      --accent: #1e293b;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      margin: 0;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      transition: background 0.3s;
-    }
-
-    /* SIDEBAR */
-    .sidebar {
-      width: 320px;
-      border-left: 1px solid var(--border);
-      background: var(--card);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      transition: width 0.3s ease;
-    }
-
-    .sidebar-head {
-      padding: 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sidebar-section {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--ink-light);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ENGINE SELECTOR */
-    .engine-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .engine-opt {
-      padding: 12px 8px;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.2s;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .engine-opt:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
-    }
-
-    .engine-opt.active {
-      border-color: var(--primary);
-      background: rgba(59, 130, 246, 0.08);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-    }
-
-    .eo-icon {
-      font-size: 20px;
-      margin-bottom: 2px;
-    }
-
-    .eo-name {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .eo-desc {
-      font-size: 10px;
-      color: var(--ink-light);
-      line-height: 1.2;
-    }
-
-    /* CONTROLS */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-    }
-
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .input-group {
-      margin-bottom: 12px;
-      position: relative;
-    }
-
-    .input-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--ink-light);
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--ink);
-      font-size: 14px;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: var(--primary);
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-primary:disabled {
-      background: var(--ink-light);
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .btn-danger {
-      background: var(--danger) !important;
-      color: white;
-      border-color: var(--danger) !important;
-    }
-
-    /* MAIN CONTENT */
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    .toolbar {
-      height: 64px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: var(--card);
-    }
-
-    .content-area {
-      flex: 1;
-      padding: 32px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      align-items: center;
-    }
-
-    #transcript {
-      width: 100%;
-      max-width: 800px;
-      min-height: 400px;
-      padding: 24px;
-      border-radius: 20px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      font-size: 18px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      outline: none;
-      transition: box-shadow 0.3s;
-    }
-
-    #transcript:focus {
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    }
-
-    #transcript:empty:before {
-      content: "הטקסט המתומלל יופיע כאן...";
-      color: var(--ink-light);
-      font-style: italic;
-    }
-
-    /* STATUS & STATS */
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ccc;
-    }
-
-    .dot.recording {
-      background: var(--danger);
-      animation: pulse 1.5s infinite;
-    }
-
-    .dot.active {
-      background: var(--success);
-    }
-
-    .stats {
-      display: flex;
-      gap: 24px;
-      font-size: 12px;
-      color: var(--ink-light);
-    }
-
-    .stat-item b {
-      color: var(--ink);
-    }
-
-    /* MODALS/OVERLAYS */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal {
-      background: var(--card);
-      width: 100%;
-      max-width: 440px;
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-      position: relative;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      cursor: pointer;
-      font-size: 20px;
-      color: var(--ink-light);
-    }
-
-    @keyframes pulse {
-      0% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-
-    /* SIDEBAR OVERLAY (mobile backdrop) */
-    #sidebarOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 1999;
-    }
-
-    /* MOBILE ADJUSTMENTS */
-    @media (max-width: 900px) {
-      .sidebar {
-        position: fixed;
-        right: -320px;
-        top: 0;
-        bottom: 0;
-        z-index: 2000;
-        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
-        transition: right 0.3s ease;
-      }
-
-      .sidebar.open {
-        right: 0;
-      }
-
-      .menu-toggle {
-        display: block !important;
-      }
-    }
-
-    @media (max-width: 640px) {
-      body {
-        height: 100dvh;
-      }
-
-      .toolbar {
-        padding: 0 12px;
-        height: auto;
-        min-height: 56px;
-        gap: 6px;
-        flex-wrap: nowrap;
-      }
-
-      #audioVisualizer {
-        display: none;
-      }
-
-      #recordBtn {
-        width: 110px !important;
-        height: 36px !important;
-        font-size: 12px !important;
-      }
-
-      .toolbar-actions {
-        gap: 6px;
-      }
-
-      .toolbar-actions .btn {
-        width: 36px !important;
-        height: 36px !important;
-      }
-
-      .content-area {
-        padding: 16px;
-      }
-
-      #transcript {
-        min-height: 200px;
-        font-size: 16px;
-        padding: 16px;
-      }
-
-      .overlay {
-        display: block;
-        overflow-y: auto;
-        padding: 16px;
-      }
-
-      .modal {
-        margin: 0 auto;
-        width: 100%;
-        max-width: 100%;
-        padding: 20px;
-      }
-
-      input,
-      select {
-        font-size: 16px;
-      }
-
-      .stats {
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-    }
-
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--ink);
-    }
-
-    .badge {
-      padding: 4px 8px;
-      border-radius: 6px;
-      background: var(--accent);
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--primary);
-    }
-
-    #audioVisualizer {
-      height: 40px;
-      width: 120px;
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .bar {
-      width: 4px;
-      height: 4px;
-      background: var(--primary);
-      border-radius: 2px;
-      transition: height 0.1s ease;
-    }
+  /* ============================================================
+     TOKENS
+  ============================================================ */
+  :root {
+    --bg:         #080c14;
+    --surface:    #0f1623;
+    --surface-2:  #161f30;
+    --surface-3:  #1c2840;
+    --border:     rgba(255,255,255,0.06);
+    --border-2:   rgba(255,255,255,0.11);
+    --ink:        #d8e4f8;
+    --ink-2:      #7a90b0;
+    --ink-3:      #3d506a;
+    --primary:    #4f8aff;
+    --primary-d:  #3a72ee;
+    --primary-bg: rgba(79,138,255,0.12);
+    --danger:     #ff3b5c;
+    --danger-d:   #e02c4b;
+    --danger-bg:  rgba(255,59,92,0.12);
+    --success:    #22c97a;
+    --r-sm: 8px; --r-md: 12px; --r-lg: 18px; --r-xl: 24px;
+    --sidebar-w: 288px;
+    --topbar-h: 56px;
+    --actionbar-h: 76px;
+    --font:    'Plus Jakarta Sans', 'Noto Sans Hebrew', system-ui, sans-serif;
+    --font-tx: 'Noto Sans Hebrew', 'Plus Jakarta Sans', sans-serif;
+  }
+  [data-theme="light"] {
+    --bg:        #eef2f8;
+    --surface:   #ffffff;
+    --surface-2: #f3f7fc;
+    --surface-3: #e8eef8;
+    --border:    rgba(0,0,0,0.06);
+    --border-2:  rgba(0,0,0,0.11);
+    --ink:       #111827;
+    --ink-2:     #4a5e78;
+    --ink-3:     #9baec4;
+    --primary-bg: rgba(79,138,255,0.08);
+    --danger-bg:  rgba(255,59,92,0.08);
+  }
+
+  /* ============================================================
+     RESET
+  ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    overflow-x: hidden;
+    max-width: 100vw;
+    height: 100dvh;
+    display: flex;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: var(--font); cursor: pointer; border: none; background: none; color: inherit; }
+  input, select { font-family: var(--font); }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+  /* ============================================================
+     LAYOUT
+  ============================================================ */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+  /* ============================================================
+     TOPBAR
+  ============================================================ */
+  .topbar {
+    height: var(--topbar-h);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 6px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .logo-mark {
+    width: 30px; height: 30px; min-width: 30px;
+    background: var(--primary);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 3px 10px rgba(79,138,255,0.35);
+  }
+  .logo-text { font-size: 15px; font-weight: 800; letter-spacing: -0.4px; white-space: nowrap; }
+  .topbar-mid {
+    flex: 1; display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden;
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: var(--ink-2);
+    min-width: 0; overflow: hidden;
+  }
+  .s-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .s-dot.active    { background: var(--success); }
+  .s-dot.recording { background: var(--danger); animation: blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.35} }
+  .status-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .visualizer { display:flex; align-items:center; gap:2px; height:20px; opacity:0; transition:opacity 0.3s; flex-shrink:0; }
+  .visualizer.active { opacity:1; }
+  .v-bar { width:3px; height:3px; background:var(--danger); border-radius:2px; transition:height 0.08s ease; }
+
+  .topbar-actions { display:flex; align-items:center; gap:1px; flex-shrink:0; }
+  .icon-btn {
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    border-radius:var(--r-sm); color:var(--ink-2); font-size:16px; transition:background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background:var(--surface-2); color:var(--ink); }
+
+  /* Desktop: record+upload in topbar */
+  .tb-record-wrap { display:none; align-items:center; gap:6px; flex-shrink:0; }
+  .tb-btn {
+    display:flex; align-items:center; gap:6px; padding:7px 14px;
+    border-radius:var(--r-md); font-size:13px; font-weight:700;
+    transition:all 0.2s; white-space:nowrap; font-family:var(--font);
+  }
+  .tb-primary { background:var(--primary); color:#fff; box-shadow:0 2px 10px rgba(79,138,255,0.3); }
+  .tb-primary:hover { background:var(--primary-d); transform:translateY(-1px); }
+  .tb-primary.recording { background:var(--danger); box-shadow:0 2px 10px rgba(255,59,92,0.3); }
+  .tb-primary:disabled { opacity:0.35; pointer-events:none; }
+  .tb-ghost { background:var(--surface-2); color:var(--ink); border:1px solid var(--border-2); }
+  .tb-ghost:hover { background:var(--surface-3); }
+  .tb-ghost:disabled { opacity:0.35; pointer-events:none; }
+
+  /* Desktop-only topbar actions */
+  .tb-actions-desktop { display:none; align-items:center; gap:1px; }
+
+  /* ============================================================
+     TRANSCRIPT
+  ============================================================ */
+  .transcript-wrap {
+    flex:1; overflow-y:auto; overflow-x:hidden; padding:12px; display:flex; flex-direction:column; gap:12px;
+  }
+  #transcript {
+    width:100%; min-height:calc(100% - 16px);
+    padding:18px; border-radius:var(--r-lg);
+    background:var(--surface); border:1px solid var(--border);
+    font-size:16px; line-height:1.8; white-space:pre-wrap;
+    outline:none; font-family:var(--font-tx); color:var(--ink);
+    direction:rtl; transition:border-color 0.2s;
+  }
+  #transcript:focus { border-color:var(--border-2); }
+  #transcript:empty::before {
+    content:"הטקסט המתומלל יופיע כאן...";
+    color:var(--ink-3); font-style:italic; pointer-events:none;
+  }
+
+  /* ============================================================
+     PROGRESS
+  ============================================================ */
+  #uploadProgress {
+    padding:14px 18px; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--r-md); display:none;
+  }
+  .prog-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:13px; font-weight:600; }
+  #progressLabel { color:var(--ink-2); }
+  #progressPercent { color:var(--primary); }
+  .prog-track { height:4px; background:var(--border-2); border-radius:2px; overflow:hidden; }
+  #progressBar { height:100%; width:0%; background:linear-gradient(90deg,var(--primary),#88b4ff); border-radius:2px; transition:width 0.3s; }
+
+  /* ============================================================
+     MOBILE ACTION BAR
+  ============================================================ */
+  .action-bar {
+    background:var(--surface); border-top:1px solid var(--border);
+    display:flex; align-items:center; padding:0 8px;
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+    gap:3px; flex-shrink:0; overflow:hidden;
+    min-height:var(--actionbar-h);
+  }
+  .ab-btn {
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:5px 7px; border-radius:var(--r-md);
+    font-size:10px; font-weight:700; color:var(--ink-2); transition:all 0.15s;
+    min-width:44px; flex-shrink:0;
+  }
+  .ab-btn:hover { background:var(--surface-2); color:var(--ink); }
+  .ab-btn:active { transform:scale(0.93); }
+  .ab-btn .ab-icon { font-size:19px; line-height:1; }
+  .ab-btn:disabled { opacity:0.3; pointer-events:none; }
+
+  .ab-record {
+    background:var(--primary); color:#fff !important;
+    box-shadow:0 3px 12px rgba(79,138,255,0.35);
+    flex-direction:row; gap:5px; padding:10px 13px;
+    font-size:13px; font-weight:800; min-width:auto;
+    flex:1; max-width:130px; justify-content:center;
+    border-radius:var(--r-md);
+  }
+  .ab-record:hover { background:var(--primary-d) !important; transform:translateY(-1px); }
+  .ab-record.recording { background:var(--danger) !important; box-shadow:0 3px 12px rgba(255,59,92,0.35); }
+  .ab-record:disabled { opacity:0.35 !important; pointer-events:none; }
+
+  .ab-upload {
+    background:var(--surface-2); color:var(--ink) !important;
+    border:1px solid var(--border-2);
+    flex-direction:row; gap:5px; padding:10px 12px;
+    font-size:13px; font-weight:700; min-width:auto;
+    flex-shrink:0; justify-content:center; border-radius:var(--r-md);
+  }
+  .ab-upload:hover { background:var(--surface-3) !important; }
+
+  .ab-sep { width:1px; height:28px; background:var(--border-2); flex-shrink:0; margin:0 2px; }
+
+  .ab-stats { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:40px; flex-shrink:0; }
+  .ab-stats .sn { font-size:15px; font-weight:800; color:var(--ink); line-height:1; }
+  .ab-stats .sl { font-size:9px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.4px; }
+
+  /* ============================================================
+     SIDEBAR (desktop)
+  ============================================================ */
+  .sidebar {
+    width:var(--sidebar-w); background:var(--surface);
+    border-inline-start:1px solid var(--border);
+    display:none; flex-direction:column;
+    overflow-y:auto; overflow-x:hidden;
+    flex-shrink:0; height:100dvh;
+  }
+  .sb-head {
+    padding:14px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .sb-logo { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:800; letter-spacing:-0.3px; }
+  .sb-section { padding:14px 16px; border-bottom:1px solid var(--border); }
+  .sb-label { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; color:var(--ink-3); margin-bottom:10px; }
+  .sb-stats { display:flex; gap:20px; padding:4px 0; }
+  .sb-stat .sn { font-size:22px; font-weight:800; color:var(--ink); line-height:1; }
+  .sb-stat .sl { font-size:10px; font-weight:700; color:var(--ink-3); text-transform:uppercase; letter-spacing:0.4px; margin-top:2px; }
+
+  /* ============================================================
+     INFO CARDS
+  ============================================================ */
+  .info-card {
+    background:var(--surface-2); border:1px solid var(--border-2);
+    border-radius:var(--r-md); padding:11px 13px; margin-bottom:8px;
+    cursor:pointer; transition:border-color 0.2s;
+  }
+  .info-card:hover { border-color:var(--primary); }
+  .info-card.no-hover { cursor:default; }
+  .info-card.no-hover:hover { border-color:var(--border-2); }
+  .ic-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ic-badge {
+    font-size:12px; font-weight:700; color:var(--primary);
+    background:var(--primary-bg); padding:3px 9px; border-radius:100px;
+  }
+  .ic-action { font-size:11px; color:var(--ink-3); }
+  .model-info { font-size:11px; color:var(--ink-2); line-height:1.5; margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
+  .model-info strong { color:var(--ink); font-weight:700; }
+  .key-row { display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .key-preview {
+    flex:1; font-size:11px; font-family:monospace;
+    background:var(--bg); border:1px solid var(--border-2);
+    border-radius:6px; padding:5px 8px; color:var(--ink-2);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  /* ============================================================
+     ENGINE GRID
+  ============================================================ */
+  .engine-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .engine-opt {
+    padding:11px 8px; border:1.5px solid var(--border-2);
+    border-radius:var(--r-md); cursor:pointer; text-align:center;
+    transition:all 0.18s; background:var(--surface-2);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .engine-opt:hover { border-color:var(--primary); background:var(--surface-3); }
+  .engine-opt.active { border-color:var(--primary); background:var(--primary-bg); box-shadow:0 0 0 1px var(--primary); }
+  .eo-icon { font-size:18px; }
+  .eo-name { font-size:11px; font-weight:700; color:var(--ink); }
+  .eo-desc { font-size:9px; color:var(--ink-2); line-height:1.3; }
+  .eo-caps { display:flex; gap:3px; justify-content:center; margin-top:3px; flex-wrap:wrap; }
+  .cap { font-size:8px; font-weight:700; padding:1px 5px; border-radius:4px; letter-spacing:0.2px; }
+  .cap-live { background:rgba(34,201,122,0.14); color:var(--success); }
+  .cap-file { background:rgba(79,138,255,0.14); color:var(--primary); }
+
+  /* ============================================================
+     FORM
+  ============================================================ */
+  .f-group { margin-bottom:12px; }
+  .f-label { display:block; font-size:11px; font-weight:700; color:var(--ink-2); margin-bottom:5px; }
+  .f-input {
+    width:100%; padding:10px 13px;
+    background:var(--surface-2); border:1.5px solid var(--border-2);
+    border-radius:var(--r-sm); font-size:16px; color:var(--ink);
+    outline:none; transition:border-color 0.2s, box-shadow 0.2s; -webkit-appearance:none;
+  }
+  .f-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-bg); }
+  select.f-input { appearance:none; cursor:pointer; }
+  .f-hint { display:block; font-size:11px; color:var(--primary); margin-top:5px; }
+
+  /* ============================================================
+     BUTTONS
+  ============================================================ */
+  .btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:7px; padding:11px 18px; border-radius:var(--r-md);
+    font-size:14px; font-weight:700; transition:all 0.2s;
+    border:none; cursor:pointer; font-family:var(--font); width:100%;
+  }
+  .btn-primary { background:var(--primary); color:#fff; box-shadow:0 4px 14px rgba(79,138,255,0.3); }
+  .btn-primary:hover { background:var(--primary-d); transform:translateY(-1px); }
+  .btn-ghost { background:var(--surface-2); color:var(--ink); border:1px solid var(--border-2); }
+  .btn-ghost:hover { background:var(--surface-3); }
+
+  /* ============================================================
+     SETTINGS BOTTOM SHEET (mobile)
+  ============================================================ */
+  .sheet-backdrop {
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    z-index:200; opacity:0; pointer-events:none; transition:opacity 0.3s;
+  }
+  .sheet-backdrop.open { opacity:1; pointer-events:all; }
+  .settings-sheet {
+    position:fixed; bottom:0; left:0; right:0; z-index:201;
+    background:var(--surface); border-radius:var(--r-xl) var(--r-xl) 0 0;
+    border-top:1px solid var(--border-2);
+    transform:translateY(100%);
+    transition:transform 0.35s cubic-bezier(0.34,1.1,0.64,1);
+    max-height:82dvh; overflow-y:auto;
+    padding-bottom:env(safe-area-inset-bottom, 16px);
+  }
+  .settings-sheet.open { transform:translateY(0); }
+  .sheet-handle { width:36px; height:4px; background:var(--border-2); border-radius:2px; margin:10px auto; }
+  .sheet-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:4px 16px 14px; border-bottom:1px solid var(--border);
+  }
+  .sheet-title { font-size:15px; font-weight:800; }
+  .sheet-body { padding:14px 16px; display:flex; flex-direction:column; gap:14px; }
+
+  /* ============================================================
+     SETUP MODAL
+  ============================================================ */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    z-index:500; display:flex; align-items:center; justify-content:center;
+    padding:16px; overflow-y:auto;
+  }
+  .modal-overlay.hidden { display:none; }
+  .modal-box {
+    background:var(--surface); border:1px solid var(--border-2);
+    width:100%; max-width:460px; border-radius:var(--r-xl);
+    padding:22px; box-shadow:0 24px 64px rgba(0,0,0,0.5); margin:auto;
+    animation:pop-in 0.25s cubic-bezier(0.34,1.3,0.64,1);
+  }
+  @keyframes pop-in { from{opacity:0;transform:scale(0.93) translateY(12px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .modal-title { font-size:19px; font-weight:800; letter-spacing:-0.4px; margin-bottom:4px; }
+  .modal-sub { font-size:13px; color:var(--ink-2); margin-bottom:16px; line-height:1.5; }
+
+  /* ============================================================
+     DESKTOP BREAKPOINT
+  ============================================================ */
+  @media (min-width: 768px) {
+    :root { --topbar-h:60px; --actionbar-h:0px; }
+    .sidebar { display:flex; }
+    .action-bar { display:none; }
+    .tb-record-wrap { display:flex; }
+    .tb-actions-desktop { display:flex; }
+    .mobile-only-btn { display:none !important; }
+    .transcript-wrap { padding:24px 28px; }
+    #transcript { font-size:18px; min-height:400px; padding:22px 26px; }
+    .topbar { padding:0 18px; gap:10px; }
+    .topbar-actions { display:none; } /* desktop actions are in .tb-actions-desktop */
+  }
+  @media (min-width: 1024px) {
+    #transcript { max-width:780px; }
+    .transcript-wrap { align-items:center; }
+    #uploadProgress { max-width:780px; width:100%; }
+  }
   </style>
 </head>
-
 <body>
 
-  <!-- Overlay for initial engine/key setup -->
-  <div id="setupOverlay" class="overlay" style="display:flex">
-    <div class="modal">
-      <h2 style="margin-top:0">ברוכים הבאים 🎙️</h2>
-      <p style="color:var(--ink-light); font-size: 14px;">בחרו מנוע תמלול כדי להתחיל. מנועים מבוססי ענן דורשים מפתח API.
-      </p>
+<!-- ============================================================
+     SETUP MODAL
+============================================================ -->
+<div id="setupOverlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">ברוכים הבאים 🎙️</div>
+    <div class="modal-sub">בחרו מנוע תמלול. מנועי ענן דורשים מפתח API.</div>
 
-      <div class="engine-grid">
-        <div class="engine-opt active" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
-          <div class="eo-icon">🧬</div>
-          <div class="eo-name">ElevenLabs</div>
-          <div class="eo-desc">הכי מדויק לעברית<br>דורש API key</div>
+    <div class="engine-grid" style="margin-bottom:14px;">
+      <div class="engine-opt active" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
+        <div class="eo-icon">🧬</div>
+        <div class="eo-name">ElevenLabs</div>
+        <div class="eo-desc">מדויק לעברית</div>
+        <div class="eo-caps"><span class="cap cap-live">חי</span><span class="cap cap-file">קובץ</span></div>
+      </div>
+      <div class="engine-opt" id="opt-deepgram" onclick="selectEngine('deepgram')">
+        <div class="eo-icon">⚡</div>
+        <div class="eo-name">Deepgram</div>
+        <div class="eo-desc">שידור חי מהיר</div>
+        <div class="eo-caps"><span class="cap cap-live">חי</span><span class="cap cap-file">קובץ</span></div>
+      </div>
+      <div class="engine-opt" id="opt-chrome" onclick="selectEngine('chrome')">
+        <div class="eo-icon">🌐</div>
+        <div class="eo-name">Chrome Speech</div>
+        <div class="eo-desc">חינמי, ללא מפתח</div>
+        <div class="eo-caps"><span class="cap cap-live">חי בלבד</span></div>
+      </div>
+      <div class="engine-opt" id="opt-openai" onclick="selectEngine('openai')">
+        <div class="eo-icon">🤖</div>
+        <div class="eo-name">OpenAI Whisper</div>
+        <div class="eo-desc">Whisper v3-large</div>
+        <div class="eo-caps"><span class="cap cap-file">קובץ בלבד</span></div>
+      </div>
+      <div class="engine-opt" id="opt-ivrit" onclick="selectEngine('ivrit')">
+        <div class="eo-icon">🇮🇱</div>
+        <div class="eo-name">Ivrit.ai</div>
+        <div class="eo-desc">מודל ישראלי</div>
+        <div class="eo-caps"><span class="cap cap-file">קובץ בלבד</span></div>
+      </div>
+      <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
+        <div class="eo-icon">🏠</div>
+        <div class="eo-name">Whisper מקומי</div>
+        <div class="eo-desc">חינמי, בדפדפן</div>
+        <div class="eo-caps"><span class="cap cap-file">קובץ בלבד</span></div>
+      </div>
+      <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
+        <div class="eo-icon">☁️</div>
+        <div class="eo-name">Azure Speech</div>
+        <div class="eo-desc">Microsoft Azure</div>
+        <div class="eo-caps"><span class="cap cap-file">קובץ בלבד</span></div>
+      </div>
+      <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
+        <div class="eo-icon">✨</div>
+        <div class="eo-name">Gemini</div>
+        <div class="eo-desc">Google AI</div>
+        <div class="eo-caps"><span class="cap cap-file">קובץ בלבד</span></div>
+      </div>
+    </div>
+
+    <div id="localModelSection" style="display:none; margin-bottom:12px;">
+      <label class="f-label">🧠 גודל מודל Whisper</label>
+      <select id="localModelSizeOverlay" class="f-input" onchange="setLocalModelSize(this.value)">
+        <option value="tiny">Tiny (~40MB) — מהיר, דיוק נמוך</option>
+        <option value="small" selected>Small (~244MB) — איזון טוב ✅</option>
+        <option value="medium">Medium (~769MB) — דיוק גבוה, איטי</option>
+      </select>
+    </div>
+
+    <div id="azureRegionSection" style="display:none; margin-bottom:12px;">
+      <label class="f-label">🌍 אזור Azure</label>
+      <select id="azureRegionSelect" class="f-input" onchange="setAzureRegion(this.value)">
+        <option value="eastus">East US</option>
+        <option value="westeurope">West Europe</option>
+        <option value="francecentral">France Central</option>
+        <option value="southeastasia">Southeast Asia</option>
+        <option value="israelcentral">Israel Central</option>
+      </select>
+    </div>
+
+    <div id="keyInputSection" style="margin-bottom:16px;">
+      <label id="apiLabel" class="f-label">🔑 ElevenLabs API Key</label>
+      <input type="password" id="apiInput" class="f-input" placeholder="הדביקו מפתח כאן...">
+      <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank" class="f-hint">איפה מוצאים את המפתח?</a>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveAndStart()">יאללה, נתחיל ▶</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     MOBILE SETTINGS SHEET
+============================================================ -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+<div class="settings-sheet" id="settingsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-title">⚙️ הגדרות</div>
+    <button class="icon-btn" onclick="closeSheet()" style="font-size:18px;">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div>
+      <div class="sb-label">מנוע תמלול</div>
+      <div class="info-card" onclick="openSetup()">
+        <div class="ic-row">
+          <span id="engineBadgeSheet" class="ic-badge">ElevenLabs</span>
+          <span class="ic-action">החלפה ✎</span>
         </div>
-        <div class="engine-opt" id="opt-deepgram" onclick="selectEngine('deepgram')">
-          <div class="eo-icon">⚡</div>
-          <div class="eo-name">Deepgram</div>
-          <div class="eo-desc">מהירות שיא (Realtime)<br>דורש API key</div>
-        </div>
-        <div class="engine-opt" id="opt-openai" onclick="selectEngine('openai')">
-          <div class="eo-icon">🤖</div>
-          <div class="eo-name">OpenAI</div>
-          <div class="eo-desc">Whisper v3-large<br>דורש API key</div>
-        </div>
-        <div class="engine-opt" id="opt-ivrit" onclick="selectEngine('ivrit')">
-          <div class="eo-icon">🇮🇱</div>
-          <div class="eo-name">Ivrit.ai</div>
-          <div class="eo-desc">מודל ישראלי חזק<br>דורש HF Token</div>
-        </div>
-        <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
-          <div class="eo-icon">🏠</div>
-          <div class="eo-name">Whisper מקומי</div>
-          <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
-        </div>
-        <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
-          <div class="eo-icon">☁️</div>
-          <div class="eo-name">Azure</div>
-          <div class="eo-desc">Speech-to-Text<br>דורש API key + אזור</div>
-        </div>
-        <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
-          <div class="eo-icon">✨</div>
-          <div class="eo-name">Gemini</div>
-          <div class="eo-desc">Google AI LLM<br>תמלול מילה במילה, קבצים בלבד</div>
-        </div>
-        <div class="engine-opt" id="opt-chrome" onclick="selectEngine('chrome')">
-          <div class="eo-icon">🌐</div>
-          <div class="eo-name">Chrome Web Speech</div>
-          <div class="eo-desc">חינמי, מהיר (Web Speech API)<br>ללא API key</div>
+        <div id="modelInfoSheet" class="model-info">מודל: <strong>scribe_v2_realtime</strong><br>שידור חי + קבצים</div>
+      </div>
+    </div>
+    <div id="apiKeyCardSheet" style="display:none;">
+      <div class="sb-label">מפתח API</div>
+      <div class="info-card no-hover">
+        <div class="key-row">
+          <code id="keyPreviewSheet" class="key-preview">••••••••</code>
+          <button class="icon-btn" onclick="toggleEye('Sheet')" style="font-size:15px; width:28px; height:28px;">👁️</button>
         </div>
       </div>
+    </div>
+    <div id="localModelCardSheet" style="display:none;">
+      <div class="sb-label">גודל מודל</div>
+      <select id="localModelSizeSheet" class="f-input" onchange="setLocalModelSize(this.value)">
+        <option value="tiny">Tiny (40MB)</option>
+        <option value="small">Small (244MB)</option>
+        <option value="medium">Medium (769MB)</option>
+      </select>
+      <div id="localModelNoteSheet" style="font-size:11px; color:var(--ink-2); margin-top:6px; line-height:1.4;"></div>
+    </div>
+    <div>
+      <div class="sb-label">תצוגה</div>
+      <button class="btn btn-ghost" onclick="toggleTheme()" style="font-size:14px;">🌗 מצב כהה / בהיר</button>
+    </div>
+  </div>
+</div>
 
-      <!-- Local model size selector (shown only when local engine is selected) -->
-      <div id="localModelSection" style="display:none;margin-top:14px;text-align:right;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🧠 גודל מודל Whisper</label>
-        <select id="localModelSizeOverlay" onchange="setLocalModelSize(this.value)"
-          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
-          <option value="tiny">Tiny (מהיר) — ~40MB · דיוק נמוך</option>
-          <option value="small" selected>Small (מומלץ ✅) — ~244MB · איזון טוב</option>
-          <option value="medium">Medium (איטי) — ~769MB · דיוק גבוה ⚠️ דורש ~1.5GB RAM</option>
-        </select>
+<!-- ============================================================
+     DESKTOP SIDEBAR
+============================================================ -->
+<aside class="sidebar">
+  <div class="sb-head">
+    <div class="sb-logo">
+      <div class="logo-mark" style="width:28px;height:28px;font-size:13px;">🎙️</div>
+      STT Pro
+    </div>
+    <button class="icon-btn" onclick="toggleTheme()" title="ערכת נושא" style="font-size:15px;">🌗</button>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">מנוע תמלול</div>
+    <div class="info-card" onclick="openSetup()">
+      <div class="ic-row">
+        <span id="engineBadge" class="ic-badge">ElevenLabs</span>
+        <span class="ic-action">החלפה ✎</span>
       </div>
-
-      <!-- Azure region selector (shown only when Azure engine is selected) -->
-      <div id="azureRegionSection" style="display:none;margin-bottom:14px;text-align:right;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🌍 אזור Azure (Region)</label>
-        <select id="azureRegionSelect" onchange="setAzureRegion(this.value)"
-          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
-          <option value="eastus">East US</option>
-          <option value="westeurope">West Europe</option>
-          <option value="francecentral">France Central</option>
-          <option value="southeastasia">Southeast Asia</option>
-          <option value="israelcentral">Israel Central</option>
-        </select>
+      <div id="modelInfo" class="model-info">מודל: <strong>scribe_v2_realtime</strong><br>שידור חי + קבצים</div>
+    </div>
+    <div id="apiKeyCard" style="display:none;">
+      <div class="key-row">
+        <code id="keyPreview" class="key-preview">••••••••</code>
+        <button class="icon-btn" onclick="toggleEye('')" style="font-size:14px; width:26px; height:26px;">👁️</button>
       </div>
-
-      <div id="keyInputSection" style="margin-top:20px">
-        <label id="apiLabel" class="input-label">🔑 ElevenLabs API Key</label>
-        <input type="password" id="apiInput" placeholder="הדביקו מפתח כאן...">
-        <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank"
-          style="font-size:11px; color:var(--primary); text-decoration:none; margin-top:5px; display:inline-block">איפה
-          מוצאים את המפתח?</a>
-      </div>
-
-      <button class="btn btn-primary" style="margin-top:24px" onclick="saveAndStart()">יאללה, בואו נתחיל</button>
     </div>
   </div>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <div class="logo"><span>🎙️</span> STT Pro</div>
-      <button onclick="toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:18px;">🌗</button>
+  <div class="sb-section" id="uploadCard" style="display:none;">
+    <div class="sb-label">העלאת קובץ</div>
+    <button class="btn btn-ghost" onclick="document.getElementById('fileIn').click()">📤 בחרו קובץ שמע</button>
+    <input type="file" id="fileIn" hidden accept="audio/*">
+  </div>
+
+  <div class="sb-section" id="localModelCard" style="display:none;">
+    <div class="sb-label">גודל מודל Whisper</div>
+    <select id="localModelSizeSidebar" class="f-input" onchange="setLocalModelSize(this.value)" style="font-size:13px;">
+      <option value="tiny">Tiny (40MB)</option>
+      <option value="small">Small (244MB) ✅</option>
+      <option value="medium">Medium (769MB)</option>
+    </select>
+    <div id="localModelNote" style="font-size:11px; color:var(--ink-2); margin-top:6px; line-height:1.4;"></div>
+  </div>
+
+  <div class="sb-section" style="margin-top:auto; border-top:1px solid var(--border);">
+    <div class="sb-label">סטטיסטיקות</div>
+    <div class="sb-stats">
+      <div class="sb-stat"><div class="sn" id="wordCount">0</div><div class="sl">מילים</div></div>
+      <div class="sb-stat"><div class="sn" id="timer">00:00</div><div class="sl">זמן</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================================================
+     MAIN
+============================================================ -->
+<main class="main">
+  <header class="topbar">
+    <!-- Mobile: settings icon -->
+    <button class="icon-btn mobile-only-btn" onclick="openSheet()" style="font-size:20px;" title="הגדרות">⚙️</button>
+
+    <!-- Logo -->
+    <div style="display:flex; align-items:center; gap:7px; flex-shrink:0;">
+      <div class="logo-mark">🎙️</div>
+      <span class="logo-text">STT Pro</span>
     </div>
 
-    <div class="sidebar-section">
-      <div class="section-title">⚙️ הגדרות מנוע</div>
-      <div class="card" style="cursor:pointer" onclick="document.getElementById('setupOverlay').style.display='flex'">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-          <span id="engineBadge" class="badge">ElevenLabs</span>
-          <span style="font-size:12px; color:var(--ink-light)">שינוי מנוע ✎</span>
-        </div>
+    <!-- Mid: status + visualizer -->
+    <div class="topbar-mid">
+      <div class="status-pill">
+        <div id="statusDot" class="s-dot"></div>
+        <span id="statusText" class="status-text">מוכן</span>
       </div>
-
-      <div class="card" id="apiKeyCard">
-        <div class="card-title" id="apiKeyCardHead">🔑 API Key</div>
-        <div style="display:flex; gap:8px; align-items:center">
-          <code id="keyPreview"
-            style="font-size:12px; flex:1; background:var(--accent); padding:4px 8px; border-radius:4px; overflow:hidden; text-overflow:ellipsis">••••••••</code>
-          <button onclick="toggleEye()" style="background:none; border:none; cursor:pointer; padding:4px">👁️</button>
-        </div>
-      </div>
-
-      <!-- Sidebar Model Size Selector (only for Local) -->
-      <div class="card" id="localModelCard" style="display:none">
-        <div class="card-title">🧠 גודל מודל Whisper</div>
-        <select id="localModelSizeSidebar" onchange="setLocalModelSize(this.value)"
-          style="font-size:12px; padding:6px;">
-          <option value="tiny">Tiny (40MB)</option>
-          <option value="small">Small (244MB)</option>
-          <option value="medium">Medium (769MB)</option>
-        </select>
-        <div id="localModelNote" style="font-size:10px; color:var(--ink-light); margin-top:6px; line-height:1.3;"></div>
+      <div class="visualizer" id="audioVisualizer">
+        <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+        <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+        <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
       </div>
     </div>
 
-    <div class="sidebar-section" id="uploadCard">
-      <div class="section-title">📁 העלאת קבצים</div>
-      <div id="modelInfo"
-        style="font-size:12px; margin-bottom:12px; padding:8px; background:rgba(59,130,246,0.05); border-radius:8px; border:1px solid rgba(59,130,246,0.1)">
-        מודל: <strong>scribe_v2</strong><br>תומך ב-mp3, wav, m4a
-      </div>
-      <button class="btn" style="background:var(--accent); color:var(--ink)"
-        onclick="document.getElementById('fileIn').click()">
-        <span>📤</span> העלאת קובץ שמע
+    <!-- Desktop: record + upload -->
+    <div class="tb-record-wrap" id="tbRecordWrap">
+      <button id="recordBtn" class="tb-btn tb-primary" onclick="handleRecordClick()">
+        <span id="recordIcon">🎤</span><span id="recordText">הקלטה</span>
       </button>
-      <input type="file" id="fileIn" hidden accept="audio/*">
+      <button id="desktopUploadBtn" class="tb-btn tb-ghost" onclick="document.getElementById('fileIn').click()">
+        📤 קובץ
+      </button>
     </div>
 
-    <div class="sidebar-section" style="margin-top:auto; border-top:1px solid var(--border)">
-      <div class="stats">
-        <div class="stat-item">מילים: <b id="wordCount">0</b></div>
-        <div class="stat-item">זמן: <b id="timer">00:00</b></div>
-      </div>
+    <!-- Desktop: secondary actions -->
+    <div class="tb-actions-desktop topbar-actions">
+      <button class="icon-btn" onclick="copyText()" title="העתקה">📋</button>
+      <button class="icon-btn" onclick="downloadText()" title="הורדה">💾</button>
+      <button class="icon-btn" onclick="clearText()" title="מחיקה" style="color:var(--danger);">🗑️</button>
     </div>
-  </aside>
 
-  <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-  <main class="main">
-    <header class="toolbar">
-      <div style="display:flex; align-items:center; gap:12px">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="status-bar">
-          <div id="statusDot" class="dot"></div>
-          <span id="statusText">מוכן</span>
-        </div>
-      </div>
-
-      <div id="audioVisualizer">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-      </div>
-
-      <div class="toolbar-actions" style="display:flex; gap:12px">
-        <button class="btn btn-primary" id="recordBtn" style="width:140px; height:40px">
-          <span id="recordIcon">🎤</span> <span id="recordText">הקלטה</span>
-        </button>
-        <button class="btn" onclick="copyText()"
-          style="width:40px; height:40px; background:var(--card); border:1px solid var(--border)">📋</button>
-        <button class="btn" onclick="downloadText()"
-          style="width:40px; height:40px; background:var(--card); border:1px solid var(--border)">💾</button>
-        <button class="btn" onclick="clearText()"
-          style="width:40px; height:40px; background:var(--card); border:1px solid var(--border); color:var(--danger)">🗑️</button>
-      </div>
-    </header>
-
-    <div class="content-area">
-      <div id="transcript" contenteditable="true"></div>
-      <div id="uploadProgress" style="display:none; width:100%; max-width:800px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; font-weight:700">
-          <span id="progressLabel">מעבד קובץ...</span>
-          <span id="progressPercent">0%</span>
-        </div>
-        <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden">
-          <div id="progressBar" style="height:100%; width:0%; background:var(--primary); transition:width 0.3s"></div>
-        </div>
-      </div>
+    <!-- Mobile: secondary actions in topbar (copy/download/clear hidden on very small) -->
+    <div class="topbar-actions" style="display:flex;">
+      <button class="icon-btn" onclick="copyText()" title="העתקה">📋</button>
+      <button class="icon-btn" onclick="downloadText()" title="הורדה">💾</button>
+      <button class="icon-btn" onclick="clearText()" title="מחיקה" style="color:var(--danger);">🗑️</button>
     </div>
-  </main>
+  </header>
 
-  <!-- External SDKs -->
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-  <script type="module">
-    // Transformers.js is imported in the code where needed
-  </script>
+  <!-- Transcript -->
+  <div class="transcript-wrap">
+    <div id="transcript" contenteditable="true" dir="rtl"></div>
+    <div id="uploadProgress">
+      <div class="prog-header">
+        <span id="progressLabel">מעבד קובץ...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="prog-track"><div id="progressBar"></div></div>
+    </div>
+  </div>
 
-  <script>
-    let isRecording = false;
-    let apiKey = localStorage.getItem('el_api_key') || '';
-    let selectedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
-    let localModelSize = localStorage.getItem('el_local_model_size') || 'small';
-    let azureRegion = localStorage.getItem('azure_region') || 'eastus';
-    let mediaRecorder;
-    let audioChunks = [];
-    let socket;
-    let timerInterval;
-    let seconds = 0;
-    let transcriber = null; // For local Whisper
+  <!-- Mobile action bar -->
+  <div class="action-bar" id="mobileActionBar">
+    <button id="mobileRecordBtn" class="ab-btn ab-record" onclick="handleRecordClick()">
+      <span id="mobileRecordIcon">🎤</span>
+      <span id="mobileRecordText">הקלטה</span>
+    </button>
+    <button id="mobileUploadBtn" class="ab-btn ab-upload" onclick="document.getElementById('fileIn2').click()">
+      <span class="ab-icon">📤</span> קובץ
+    </button>
+    <input type="file" id="fileIn2" hidden accept="audio/*">
+    <div class="ab-sep"></div>
+    <div class="ab-stats">
+      <div class="sn" id="wordCountMobile">0</div>
+      <div class="sl">מילים</div>
+    </div>
+    <div class="ab-stats">
+      <div class="sn" id="timerMobile">00:00</div>
+      <div class="sl">זמן</div>
+    </div>
+  </div>
+</main>
 
-    const localModelNotes = {
-      tiny: 'מהיר מאוד, זיכרון נמוך. מתאים לטקסט פשוט.',
-      small: 'הבחירה המאוזנת. דיוק טוב ומהירות סבירה.',
-      medium: 'דיוק גבוה מאוד. דורש הרבה זיכרון ועלול להיות איטי.'
-    };
-
-    // ── ENGINE LOGIC ─────────────────────────────────────────────────────────────
-
-    function selectEngine(e) {
-      selectedEngine = e;
-      document.querySelectorAll('.engine-opt').forEach(opt => opt.classList.remove('active'));
-      document.getElementById('opt-' + e).classList.add('active');
-
-      const isIvrit = e === 'ivrit';
-      const isOpenAI = e === 'openai';
-      const needsKey = (e !== 'local' && e !== 'chrome');
-
-      document.getElementById('keyInputSection').style.display = needsKey ? '' : 'none';
-
-      if (e === 'elevenlabs') {
-        document.getElementById('apiLabel').textContent = '🔑 ElevenLabs API Key';
-        document.getElementById('apiLink').href = 'https://elevenlabs.io/app/settings/api-keys';
-        document.getElementById('apiLink').textContent = 'elevenlabs.io/app/settings/api-keys';
-        document.getElementById('apiInput').placeholder = 'sk-...';
-        document.getElementById('apiInput').value = localStorage.getItem('elevenlabs_api_key') || '';
-      } else if (e === 'deepgram') {
-        document.getElementById('apiLabel').textContent = '🔑 Deepgram API Key';
-        document.getElementById('apiLink').href = 'https://console.deepgram.com/';
-        document.getElementById('apiLink').textContent = 'console.deepgram.com';
-        document.getElementById('apiInput').placeholder = 'abc123...';
-        document.getElementById('apiInput').value = localStorage.getItem('deepgram_api_key') || '';
-      } else if (isIvrit) {
-        document.getElementById('apiLabel').textContent = '🔑 HuggingFace Token';
-        document.getElementById('apiLink').href = 'https://huggingface.co/settings/tokens';
-        document.getElementById('apiLink').textContent = 'huggingface.co/settings/tokens';
-        document.getElementById('apiInput').placeholder = 'hf_...';
-        document.getElementById('apiInput').value = localStorage.getItem('ivrit_api_key') || '';
-      } else if (isOpenAI) {
-        document.getElementById('apiLabel').textContent = '🔑 OpenAI API Key';
-        document.getElementById('apiLink').href = 'https://platform.openai.com/api-keys';
-        document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
-        document.getElementById('apiInput').placeholder = 'sk-...';
-        document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
-      } else if (e === 'azure') {
-        document.getElementById('apiLabel').textContent = '🔑 Azure Speech API Key';
-        document.getElementById('apiLink').href = 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices';
-        document.getElementById('apiLink').textContent = 'portal.azure.com → Speech Services';
-        document.getElementById('apiInput').placeholder = 'מפתח API של Azure Speech...';
-        document.getElementById('apiInput').value = localStorage.getItem('azure_api_key') || '';
-      } else if (e === 'gemini') {
-        document.getElementById('apiLabel').textContent = '🔑 Google Gemini API Key';
-        document.getElementById('apiLink').href = 'https://aistudio.google.com/apikey';
-        document.getElementById('apiLink').textContent = 'aistudio.google.com/apikey';
-        document.getElementById('apiInput').placeholder = 'AIza...';
-        document.getElementById('apiInput').value = localStorage.getItem('gemini_api_key') || '';
-      }
-
-      // Show/hide local model size section in overlay
-      document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
-      if (e === 'local') {
-        document.getElementById('localModelSizeOverlay').value = localModelSize;
-      }
-
-      // Show/hide Azure region section in overlay
-      document.getElementById('azureRegionSection').style.display = (e === 'azure') ? '' : 'none';
-      if (e === 'azure') {
-        document.getElementById('azureRegionSelect').value = azureRegion;
-      }
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script>
+  /* ── ENGINE DEFINITIONS ─────────────────────────────────── */
+  const ENGINE_DEFS = {
+    elevenlabs: {
+      name:'ElevenLabs', realtime:true, file:true, needsKey:true,
+      keyLabel:'🔑 ElevenLabs API Key',
+      keyLink:'https://elevenlabs.io/app/settings/api-keys',
+      keyLinkText:'elevenlabs.io — הגדרות API', placeholder:'sk-...', lsKey:'elevenlabs_api_key',
+      modelInfo:'מודל: <strong>scribe_v2_realtime</strong><br>שידור חי + קבצים'
+    },
+    deepgram: {
+      name:'Deepgram', realtime:true, file:true, needsKey:true,
+      keyLabel:'🔑 Deepgram API Key',
+      keyLink:'https://console.deepgram.com/',
+      keyLinkText:'console.deepgram.com', placeholder:'abc123...', lsKey:'deepgram_api_key',
+      modelInfo:'מודל: <strong>nova-3</strong><br>שידור חי + קבצים'
+    },
+    chrome: {
+      name:'Chrome Speech', realtime:true, file:false, needsKey:false,
+      modelInfo:'מנוע: <strong>Web Speech API</strong><br>שידור חי בלבד · חינמי'
+    },
+    openai: {
+      name:'OpenAI Whisper', realtime:false, file:true, needsKey:true,
+      keyLabel:'🔑 OpenAI API Key',
+      keyLink:'https://platform.openai.com/api-keys',
+      keyLinkText:'platform.openai.com', placeholder:'sk-...', lsKey:'openai_api_key',
+      modelInfo:'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי'
+    },
+    ivrit: {
+      name:'Ivrit.ai', realtime:false, file:true, needsKey:true,
+      keyLabel:'🔑 HuggingFace Token',
+      keyLink:'https://huggingface.co/settings/tokens',
+      keyLinkText:'huggingface.co/settings/tokens', placeholder:'hf_...', lsKey:'ivrit_api_key',
+      modelInfo:'מודל: <strong>whisper-large-v3-turbo</strong><br>קבצים בלבד · עברית'
+    },
+    local: {
+      name:'Whisper מקומי', realtime:false, file:true, needsKey:false,
+      modelInfo:'מנוע: <strong>Xenova/Whisper</strong><br>קבצים בלבד · מקומי בדפדפן'
+    },
+    azure: {
+      name:'Azure Speech', realtime:false, file:true, needsKey:true,
+      keyLabel:'🔑 Azure Speech API Key',
+      keyLink:'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices',
+      keyLinkText:'portal.azure.com → Speech Services', placeholder:'מפתח Azure...', lsKey:'azure_api_key',
+      modelInfo:'מנוע: <strong>Azure Speech-to-Text</strong><br>קבצים בלבד'
+    },
+    gemini: {
+      name:'Gemini', realtime:false, file:true, needsKey:true,
+      keyLabel:'🔑 Google Gemini API Key',
+      keyLink:'https://aistudio.google.com/apikey',
+      keyLinkText:'aistudio.google.com/apikey', placeholder:'AIza...', lsKey:'gemini_api_key',
+      modelInfo:'מנוע: <strong>gemini-flash-latest</strong><br>קבצים בלבד · LLM'
     }
+  };
 
-    function setLocalModelSize(size) {
-      localModelSize = size;
-      localStorage.setItem('el_local_model_size', size);
-      updateUI();
+  const LOCAL_MODEL_NOTES = {
+    tiny:   'מהיר מאוד, זיכרון נמוך. מתאים לטקסט פשוט.',
+    small:  'הבחירה המאוזנת. דיוק טוב ומהירות סבירה.',
+    medium: 'דיוק גבוה מאוד. דורש ~1.5GB RAM ועלול להיות איטי.'
+  };
+
+  /* ── STATE ──────────────────────────────────────────────── */
+  let isRecording    = false;
+  let apiKey         = '';
+  let selectedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
+  let localModelSize = localStorage.getItem('el_local_model_size') || 'small';
+  let azureRegion    = localStorage.getItem('azure_region') || 'eastus';
+  let mediaRecorder, socket, timerInterval, seconds = 0, transcriber = null, recognition;
+
+  /* ── SHEET / MODAL ──────────────────────────────────────── */
+  function openSheet() {
+    document.getElementById('settingsSheet').classList.add('open');
+    document.getElementById('sheetBackdrop').classList.add('open');
+  }
+
+  function closeSheet() {
+    document.getElementById('settingsSheet').classList.remove('open');
+    document.getElementById('sheetBackdrop').classList.remove('open');
+  }
+
+  function openSetup() {
+    closeSheet();
+    document.getElementById('setupOverlay').classList.remove('hidden');
+    selectEngine(selectedEngine);
+  }
+
+  /* ── SELECT ENGINE ──────────────────────────────────────── */
+  function selectEngine(e) {
+    selectedEngine = e;
+    document.querySelectorAll('.engine-opt').forEach(o => o.classList.remove('active'));
+    const el = document.getElementById('opt-' + e);
+    if (el) el.classList.add('active');
+
+    const def = ENGINE_DEFS[e] || {};
+    // Key section
+    document.getElementById('keyInputSection').style.display = def.needsKey ? '' : 'none';
+    if (def.needsKey) {
+      document.getElementById('apiLabel').textContent = def.keyLabel;
+      document.getElementById('apiInput').placeholder  = def.placeholder;
+      document.getElementById('apiInput').value = localStorage.getItem(def.lsKey) || '';
+      document.getElementById('apiLink').href = def.keyLink;
+      document.getElementById('apiLink').textContent = def.keyLinkText;
     }
-
-    function setAzureRegion(region) {
-      azureRegion = region;
-      localStorage.setItem('azure_region', region);
-      updateUI();
-    }
-
-    function saveAndStart() {
-      const keyVal = document.getElementById('apiInput').value.trim();
-      if (selectedEngine !== 'local' && selectedEngine !== 'chrome' && !keyVal) {
-        alert('נא להזין מפתח API כדי להמשיך');
-        return;
-      }
-
-      apiKey = keyVal;
-      if (selectedEngine === 'elevenlabs') localStorage.setItem('elevenlabs_api_key', apiKey);
-      if (selectedEngine === 'deepgram') localStorage.setItem('deepgram_api_key', apiKey);
-      if (selectedEngine === 'ivrit') localStorage.setItem('ivrit_api_key', apiKey);
-      if (selectedEngine === 'openai') localStorage.setItem('openai_api_key', apiKey);
-      if (selectedEngine === 'azure') localStorage.setItem('azure_api_key', apiKey);
-      if (selectedEngine === 'gemini') localStorage.setItem('gemini_api_key', apiKey);
-
-      localStorage.setItem('el_engine', selectedEngine);
-      document.getElementById('setupOverlay').style.display = 'none';
-      updateUI();
-    }
-
-    function updateUI() {
-      const isEL = selectedEngine === 'elevenlabs';
-      const isDG = selectedEngine === 'deepgram';
-      const isIvrit = selectedEngine === 'ivrit';
-      const isOpenAI = selectedEngine === 'openai';
-      const isLocal = selectedEngine === 'local';
-      const isAzure = selectedEngine === 'azure';
-      const isGemini = selectedEngine === 'gemini';
-      const isChrome = selectedEngine === 'chrome';
-
-      const needsKey = isEL || isDG || isIvrit || isOpenAI || isAzure || isGemini;
-      const fileOnly = isIvrit || isOpenAI || isLocal || isAzure || isGemini;
-
-      const badgeNames = {
-        elevenlabs: 'ElevenLabs',
-        deepgram: 'Deepgram',
-        google: 'Google',
-        ivrit: 'ivrit.ai',
-        openai: 'OpenAI',
-        local: 'Whisper מקומי',
-        azure: 'Azure',
-        gemini: 'Gemini',
-        chrome: 'Chrome Speech'
-      };
-
-      document.getElementById('engineBadge').textContent = badgeNames[selectedEngine] || selectedEngine;
-      document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
-      document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
-
-      document.getElementById('localModelCard').style.display = isLocal ? '' : 'none';
-      if (isLocal) {
-        document.getElementById('localModelSizeSidebar').value = localModelSize;
-        const noteEl = document.getElementById('localModelNote');
-        if (noteEl) noteEl.textContent = localModelNotes[localModelSize] || '';
-      }
-
-      const micLabel = document.getElementById('recordText');
-      const micBtn = document.getElementById('recordBtn');
-
-      if (isEL) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>שידור חי + קבצים';
-      } else if (isDG) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 Deepgram API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>nova-3</strong><br>שידור חי + קבצים';
-      } else if (isIvrit) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 HuggingFace Token';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-large-v3-turbo-d4</strong><br>קבצים בלבד · עברית בלבד';
-      } else if (isOpenAI) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
-      } else if (isAzure) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 Azure Speech API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>Azure Speech-to-Text</strong><br>אזור: <strong>' + azureRegion + '</strong> · קבצים בלבד';
-      } else if (isGemini) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 Google Gemini API Key';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-flash-latest</strong><br>תמלול LLM · קבצים בלבד';
-      } else if (isChrome) {
-        document.getElementById('apiKeyCardHead').textContent = '🔑 Web Speech API';
-        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>Chrome Speech API</strong><br>תמלול דפדפן · חינמי';
-      }
-
-      if (fileOnly) {
-        micLabel.textContent = 'שידור חי לא נתמך';
-        micBtn.disabled = true;
-        micBtn.style.opacity = '0.5';
-      } else {
-        micLabel.textContent = isRecording ? 'עצור הקלטה' : 'התחל הקלטה';
-        micBtn.disabled = false;
-        micBtn.style.opacity = '1';
-      }
-
-      updateKeyPreview();
-    }
-
-    function updateKeyPreview() {
-      const el = document.getElementById('keyPreview');
-      const currentKey = localStorage.getItem(selectedEngine + '_api_key') || apiKey;
-      el.textContent = currentKey ? currentKey.slice(0, 8) + '••••' + currentKey.slice(-4) : '—';
-    }
-
-    function toggleEye() {
-      const el = document.getElementById('keyPreview');
-      const currentKey = localStorage.getItem(selectedEngine + '_api_key') || apiKey;
-      if (el.textContent.includes('••••')) {
-        el.textContent = currentKey;
-      } else {
-        updateKeyPreview();
-      }
-    }
-
-    // ── CORE FUNCTIONS ───────────────────────────────────────────────────────────
-
-    const recordBtn = document.getElementById('recordBtn');
-    const transcript = document.getElementById('transcript');
-
-    recordBtn.onclick = () => {
-      if (isRecording) stopRecording();
-      else startRecording();
-    };
-
-    let recognition;
-    async function startRecording() {
-      if (selectedEngine === 'elevenlabs') startElevenLabs();
-      else if (selectedEngine === 'deepgram') startDeepgram();
-      else if (selectedEngine === 'chrome') startChrome();
-    }
-
-    function stopRecording() {
-      isRecording = false;
-      if (socket) socket.close();
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      if (recognition) {
-        recognition.stop();
-        recognition = null;
-      }
-      clearInterval(timerInterval);
-      updateStatus('מוכן', false);
-      recordBtn.classList.remove('btn-danger');
-      document.getElementById('recordIcon').textContent = '🎤';
-      document.getElementById('recordText').textContent = 'התחל הקלטה';
-    }
-
-    // ElevenLabs Realtime
-    async function startElevenLabs() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        socket = new WebSocket(`wss://api.elevenlabs.io/v1/scribe/realtime?model=scribe_v2_realtime&api_key=${apiKey}`);
-
-        socket.onopen = () => {
-          isRecording = true;
-          updateStatus('מקליט (ElevenLabs)', true);
-          startTimer();
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data);
-          };
-          mediaRecorder.start(250);
-          recordBtn.classList.add('btn-danger');
-          document.getElementById('recordIcon').textContent = '⏹️';
-          document.getElementById('recordText').textContent = 'עצור הקלטה';
-        };
-
-        socket.onmessage = (evt) => {
-          const data = JSON.parse(evt.data);
-          if (data.type === 'transcript' && data.transcript) {
-            appendTranscript(data.transcript, data.is_final);
-          }
-        };
-
-        socket.onerror = (e) => { console.error(e); stopRecording(); };
-        socket.onclose = () => stopRecording();
-
-      } catch (err) { alert('שגיאה בגישה למיקרופון'); }
-    }
-
-    // Deepgram Realtime
-    async function startDeepgram() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true', ['token', apiKey]);
-
-        socket.onopen = () => {
-          isRecording = true;
-          updateStatus('מקליט (Deepgram)', true);
-          startTimer();
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data);
-          };
-          mediaRecorder.start(250);
-          recordBtn.classList.add('btn-danger');
-          document.getElementById('recordIcon').textContent = '⏹️';
-          document.getElementById('recordText').textContent = 'עצור הקלטה';
-        };
-
-        socket.onmessage = (msg) => {
-          const data = JSON.parse(msg.data);
-          const text = data.channel.alternatives[0].transcript;
-          if (text) appendTranscript(text, data.is_final);
-        };
-
-        socket.onclose = () => stopRecording();
-      } catch (err) { alert('שגיאה בחיבור ל-Deepgram'); }
-    }
-
-    // Chrome Web Speech
-    function startChrome() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert('הדפדפן שלך לא תומך ב-Web Speech API. מומלץ להשתמש ב-Chrome.');
-        return;
-      }
-
-      recognition = new SpeechRecognition();
-      recognition.lang = 'he-IL';
-      recognition.interimResults = true;
-      recognition.continuous = true;
-
-      recognition.onstart = () => {
-        isRecording = true;
-        updateStatus('מקליט (Chrome)', true);
-        startTimer();
-        recordBtn.classList.add('btn-danger');
-        document.getElementById('recordIcon').textContent = '⏹️';
-        document.getElementById('recordText').textContent = 'עצור הקלטה';
-      };
-
-      recognition.onresult = (event) => {
-        let interim = '';
-        let final = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript;
-          } else {
-            interim += event.results[i][0].transcript;
-          }
-        }
-
-        if (final) appendTranscript(final + ' ', true);
-        if (interim) appendTranscript(interim, false);
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        if (event.error !== 'no-speech') stopRecording();
-      };
-
-      recognition.onend = () => {
-        if (isRecording && recognition) {
-          try { recognition.start(); } catch (e) { stopRecording(); }
-        } else {
-          stopRecording();
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch (e) {
-        alert('שגיאה בהפעלת הקלטה מובנית');
-      }
-    }
-
-    // ── FILE UPLOAD ─────────────────────────────────────────────────────────────
-
-    document.getElementById('fileIn').onchange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      if (selectedEngine === 'local') {
-        transcribeLocal(file);
-      } else if (selectedEngine === 'ivrit') {
-        transcribeIvrit(file);
-      } else if (selectedEngine === 'openai') {
-        transcribeOpenAI(file);
-      } else if (selectedEngine === 'azure') {
-        transcribeAzure(file);
-      } else if (selectedEngine === 'gemini') {
-        transcribeGemini(file);
-      } else {
-        transcribeCloud(file); // ElevenLabs / Deepgram
-      }
-    };
-
-    async function transcribeCloud(file) {
-      showProgress(true);
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('model', 'scribe_v2');
-
-      const url = selectedEngine === 'elevenlabs'
-        ? 'https://api.elevenlabs.io/v1/scribe'
-        : 'https://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true';
-
-      try {
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'xi-api-key': apiKey, 'Authorization': `Token ${apiKey}` }, // Works for both
-          body: formData
-        });
-        const data = await resp.json();
-        const text = selectedEngine === 'elevenlabs' ? data.transcript : data.results.channels[0].alternatives[0].transcript;
-        appendTranscript(text, true);
-      } catch (err) { alert('שגיאה בהעלאת הקובץ'); }
-      showProgress(false);
-    }
-
-    async function transcribeOpenAI(file) {
-      showProgress(true, 'שולח ל-OpenAI...');
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('model', 'whisper-1');
-      formData.append('language', 'he');
-
-      try {
-        const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-          body: formData
-        });
-        const data = await resp.json();
-        if (data.text) appendTranscript(data.text, true);
-        else alert('שגיאה: ' + (data.error?.message || 'לא התקבל טקסט'));
-      } catch (err) { alert('שגיאה בתקשורת עם OpenAI'); }
-      showProgress(false);
-    }
-
-    async function transcribeIvrit(file) {
-      showProgress(true, 'מעלה ל-Ivrit.ai...');
-      const formData = new FormData();
-      formData.append('audio', file);
-
-      try {
-        const resp = await fetch('https://api.ivrit.ai/api/transcribe', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${apiKey}` },
-          body: formData
-        });
-        const data = await resp.json();
-        // Ivrit.ai usually returns a job ID or results
-        if (data.text) appendTranscript(data.text, true);
-        else alert('התמלול בביצוע או שחלה שגיאה');
-      } catch (err) { alert('שגיאה בתקשורת עם Ivrit.ai'); }
-      showProgress(false);
-    }
-
-    async function transcribeAzure(file) {
-      showProgress(true, 'מעלה ל-Azure...');
-      try {
-        const url = `https://${azureRegion}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-05-15-preview`;
-        const formData = new FormData();
-        formData.append('audio', file);
-        formData.append('definition', JSON.stringify({
-          locales: ["he-IL"],
-          profanityFilterMode: "None"
-        }));
-
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Ocp-Apim-Subscription-Key': apiKey },
-          body: formData
-        });
-
-        const data = await resp.json();
-        if (data.combinedPhrases && data.combinedPhrases[0]) {
-          appendTranscript(data.combinedPhrases[0].text, true);
-        } else {
-          alert('שגיאה בתמלול Azure');
-        }
-      } catch (err) {
-        alert('שגיאה בתקשורת עם Azure');
-      }
-      showProgress(false);
-    }
-
-    async function transcribeGemini(file) {
-      showProgress(true, 'מעבד עם Gemini...');
-      try {
-        // Step 1: Read file as Base64
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-          const base64Data = reader.result.split(',')[1];
-          const mimeType = file.type;
-
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: "אנא תמלל את קובץ השמע המצורף בצורה מדויקת מילה במילה. אל תוסיף פרשנות, רק את התמליל." },
-                  { inline_data: { mime_type: mimeType, data: base64Data } }
-                ]
-              }]
-            })
-          });
-
-          const result = await response.json();
-          if (result.candidates && result.candidates[0].content.parts[0].text) {
-            appendTranscript(result.candidates[0].content.parts[0].text, true);
-          } else {
-            console.error(result);
-            alert('שגיאה בתמלול Gemini: ' + (result.error?.message || 'לא התקבלו תוצאות'));
-          }
-          showProgress(false);
-        };
-      } catch (err) {
-        alert('שגיאה בתקשורת עם Gemini');
-        showProgress(false);
-      }
-    }
-
-    async function transcribeLocal(file) {
-      showProgress(true, 'טוען מודל Whisper לדפדפן (פעם ראשונה עשויה לקחת זמן)...');
-      try {
-        const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-
-        if (!transcriber || transcriber.model !== `Xenova/whisper-${localModelSize}`) {
-          updateStatus('טוען מודל...', true);
-          transcriber = await pipeline('automatic-speech-recognition', `Xenova/whisper-${localModelSize}`, {
-            progress_callback: (p) => {
-              if (p.status === 'progress') {
-                updateProgress(p.progress, `טוען מודל: ${Math.round(p.progress)}%`);
-              }
-            }
-          });
-          transcriber.model = `Xenova/whisper-${localModelSize}`;
-        }
-
-        updateStatus('מעבד...', true);
-        updateProgress(0, 'מנתח שמע...');
-
-        const audioData = await readAudioAsFloat32(file);
-        const output = await transcriber(audioData, {
-          language: 'hebrew',
-          task: 'transcribe',
-          chunk_length_s: 30,
-          stride_length_s: 5,
-          callback_function: (p) => {
-            // Partial results not easily supported in simple pipeline
-          }
-        });
-
-        appendTranscript(output.text, true);
-        updateStatus('מוכן', false);
-      } catch (err) {
-        console.error(err);
-        alert('שגיאה בתמלול מקומי. וודאו שיש לכם מספיק זיכרון RAM.');
-      }
-      showProgress(false);
-    }
-
-    async function readAudioAsFloat32(file) {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-      const arrayBuffer = await file.arrayBuffer();
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      let audioData = audioBuffer.getChannelData(0);
-      return audioData;
-    }
-
-    // ── HELPERS ──────────────────────────────────────────────────────────────────
-
-    let lastFinalText = "";
-    function appendTranscript(text, isFinal) {
-      if (isFinal) {
-        lastFinalText += text + " ";
-        transcript.textContent = lastFinalText;
-      } else {
-        transcript.textContent = lastFinalText + text;
-      }
-
-      const words = transcript.textContent.trim().split(/\s+/).length;
-      document.getElementById('wordCount').textContent = transcript.textContent.trim() ? words : 0;
-      transcript.scrollTop = transcript.scrollHeight;
-    }
-
-    function updateStatus(txt, active) {
-      document.getElementById('statusText').textContent = txt;
-      document.getElementById('statusDot').className = 'dot ' + (active ? (isRecording ? 'recording' : 'active') : '');
-    }
-
-    function startTimer() {
-      seconds = 0;
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        seconds++;
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        document.getElementById('timer').textContent = `${m}:${s}`;
-      }, 1000);
-    }
-
-    function showProgress(show, label = 'מעבד קובץ...') {
-      document.getElementById('uploadProgress').style.display = show ? 'block' : 'none';
-      document.getElementById('progressLabel').textContent = label;
-      if (!show) updateProgress(0);
-    }
-
-    function updateProgress(pct, label) {
-      document.getElementById('progressBar').style.width = pct + '%';
-      document.getElementById('progressPercent').textContent = Math.round(pct) + '%';
-      if (label) document.getElementById('progressLabel').textContent = label;
-    }
-
-    function copyText() {
-      navigator.clipboard.writeText(transcript.textContent);
-      const btn = event.currentTarget;
-      const old = btn.textContent;
-      btn.textContent = '✅';
-      setTimeout(() => btn.textContent = old, 2000);
-    }
-
-    function downloadText() {
-      const blob = new Blob([transcript.textContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `transcription-${new Date().getTime()}.txt`;
-      a.click();
-    }
-
-    function clearText() {
-      if (confirm('למחוק את כל הטקסט?')) {
-        transcript.textContent = '';
-        lastFinalText = '';
-        document.getElementById('wordCount').textContent = '0';
-      }
-    }
-
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      const isOpen = sidebar.classList.toggle('open');
-      overlay.style.display = isOpen ? 'block' : 'none';
-    }
-
-    function toggleTheme() {
-      const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      document.body.setAttribute('data-theme', theme);
-      localStorage.setItem('el_theme', theme);
-    }
-
-    // Init
-    if (localStorage.getItem('el_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-    if (selectedEngine) selectEngine(selectedEngine);
+    // Local / Azure extras
+    document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
+    if (e === 'local') document.getElementById('localModelSizeOverlay').value = localModelSize;
+    document.getElementById('azureRegionSection').style.display = (e === 'azure') ? '' : 'none';
+    if (e === 'azure') document.getElementById('azureRegionSelect').value = azureRegion;
+  }
+
+  function setLocalModelSize(size) {
+    localModelSize = size;
+    localStorage.setItem('el_local_model_size', size);
+    ['localModelSizeOverlay','localModelSizeSidebar','localModelSizeSheet'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = size;
+    });
     updateUI();
+  }
 
-    // Visualizer simulation
-    setInterval(() => {
-      if (!isRecording) {
-        document.querySelectorAll('.bar').forEach(b => b.style.height = '4px');
-        return;
-      }
-      document.querySelectorAll('.bar').forEach(b => {
-        b.style.height = (Math.random() * 30 + 5) + 'px';
+  function setAzureRegion(region) {
+    azureRegion = region;
+    localStorage.setItem('azure_region', region);
+    updateUI();
+  }
+
+  function saveAndStart() {
+    const def = ENGINE_DEFS[selectedEngine] || {};
+    const keyVal = document.getElementById('apiInput').value.trim();
+    if (def.needsKey && !keyVal) { alert('נא להזין מפתח API כדי להמשיך'); return; }
+    apiKey = keyVal;
+    if (def.lsKey) localStorage.setItem(def.lsKey, apiKey);
+    localStorage.setItem('el_api_key', apiKey);
+    localStorage.setItem('el_engine', selectedEngine);
+    document.getElementById('setupOverlay').classList.add('hidden');
+    updateUI();
+  }
+
+  /* ── UPDATE UI ──────────────────────────────────────────── */
+  function updateUI() {
+    const def = ENGINE_DEFS[selectedEngine] || {};
+    const { realtime, file, needsKey, name } = def;
+
+    // Load key from storage
+    if (def.lsKey) apiKey = localStorage.getItem(def.lsKey) || apiKey;
+
+    // Engine badges
+    ['engineBadge','engineBadgeSheet'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = name || selectedEngine;
+    });
+
+    // Model info
+    let miText = def.modelInfo || '';
+    if (selectedEngine === 'azure') miText += ` · אזור: <strong>${azureRegion}</strong>`;
+    ['modelInfo','modelInfoSheet'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = miText;
+    });
+
+    // Key cards
+    document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
+    document.getElementById('apiKeyCardSheet').style.display = needsKey ? '' : 'none';
+
+    // Local model
+    const showLocal = selectedEngine === 'local';
+    document.getElementById('localModelCard').style.display = showLocal ? '' : 'none';
+    document.getElementById('localModelCardSheet').style.display = showLocal ? '' : 'none';
+    if (showLocal) {
+      ['localModelSizeSidebar','localModelSizeSheet'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = localModelSize;
       });
-    }, 100);
-  </script>
-</body>
+      const note = LOCAL_MODEL_NOTES[localModelSize] || '';
+      ['localModelNote','localModelNoteSheet'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = note;
+      });
+    }
 
+    // Upload card (sidebar)
+    document.getElementById('uploadCard').style.display = file ? '' : 'none';
+
+    // Desktop topbar buttons
+    const recBtn  = document.getElementById('recordBtn');
+    const upBtn   = document.getElementById('desktopUploadBtn');
+    recBtn.disabled = !realtime;
+    recBtn.style.display = realtime ? '' : 'none';
+    upBtn.disabled = !file;
+    upBtn.style.display = file ? '' : 'none';
+
+    // Mobile action bar
+    document.getElementById('mobileRecordBtn').style.display = realtime ? '' : 'none';
+    document.getElementById('mobileUploadBtn').style.display = file    ? '' : 'none';
+
+    updateKeyPreview();
+  }
+
+  function updateKeyPreview() {
+    const def = ENGINE_DEFS[selectedEngine] || {};
+    const k   = def.lsKey ? (localStorage.getItem(def.lsKey) || apiKey) : apiKey;
+    const masked = k ? '••••' + k.slice(-4) : '——';
+    ['keyPreview','keyPreviewSheet'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = masked;
+    });
+  }
+
+  function toggleEye(suffix) {
+    const el = document.getElementById('keyPreview' + suffix);
+    const def = ENGINE_DEFS[selectedEngine] || {};
+    const k   = def.lsKey ? (localStorage.getItem(def.lsKey) || apiKey) : apiKey;
+    el.textContent = el.textContent.includes('••••') ? (k || '——') : ('••••' + (k || '').slice(-4));
+  }
+
+  /* ── RECORD ─────────────────────────────────────────────── */
+  function handleRecordClick() {
+    if (isRecording) stopRecording(); else startRecording();
+  }
+
+  async function startRecording() {
+    if (selectedEngine === 'elevenlabs') startElevenLabs();
+    else if (selectedEngine === 'deepgram') startDeepgram();
+    else if (selectedEngine === 'chrome') startChrome();
+  }
+
+  function stopRecording() {
+    isRecording = false;
+    if (socket) socket.close();
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (recognition) { recognition.stop(); recognition = null; }
+    clearInterval(timerInterval);
+    updateStatus('מוכן', false);
+    setRecordingUI(false);
+  }
+
+  function setRecordingUI(active) {
+    const icon = active ? '⏹️' : '🎤', text = active ? 'עצור' : 'הקלטה';
+    document.getElementById('recordIcon').textContent = icon;
+    document.getElementById('recordText').textContent = text;
+    document.getElementById('mobileRecordIcon').textContent = icon;
+    document.getElementById('mobileRecordText').textContent = text;
+    document.getElementById('recordBtn').classList.toggle('recording', active);
+    document.getElementById('mobileRecordBtn').classList.toggle('recording', active);
+    document.getElementById('audioVisualizer').classList.toggle('active', active);
+  }
+
+  /* ── ELEVENLABS ─────────────────────────────────────────── */
+  async function startElevenLabs() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      socket = new WebSocket(`wss://api.elevenlabs.io/v1/scribe/realtime?model=scribe_v2_realtime&api_key=${apiKey}`);
+      socket.onopen = () => {
+        isRecording = true; updateStatus('מקליט — ElevenLabs', true); startTimer();
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data); };
+        mediaRecorder.start(250); setRecordingUI(true);
+      };
+      socket.onmessage = (evt) => {
+        const d = JSON.parse(evt.data);
+        if (d.type === 'transcript' && d.transcript) appendTranscript(d.transcript, d.is_final);
+      };
+      socket.onerror = (e) => { console.error(e); stopRecording(); };
+      socket.onclose = () => { if (isRecording) stopRecording(); };
+    } catch (err) { alert('שגיאה בגישה למיקרופון'); }
+  }
+
+  /* ── DEEPGRAM ───────────────────────────────────────────── */
+  async function startDeepgram() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true', ['token', apiKey]);
+      socket.onopen = () => {
+        isRecording = true; updateStatus('מקליט — Deepgram', true); startTimer();
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data); };
+        mediaRecorder.start(250); setRecordingUI(true);
+      };
+      socket.onmessage = (msg) => {
+        const d = JSON.parse(msg.data), text = d.channel?.alternatives?.[0]?.transcript;
+        if (text) appendTranscript(text, d.is_final);
+      };
+      socket.onclose = () => { if (isRecording) stopRecording(); };
+    } catch (err) { alert('שגיאה בחיבור ל-Deepgram'); }
+  }
+
+  /* ── CHROME SPEECH ──────────────────────────────────────── */
+  function startChrome() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('הדפדפן שלך לא תומך ב-Web Speech API. מומלץ Chrome.'); return; }
+    recognition = new SR();
+    recognition.lang = 'he-IL'; recognition.interimResults = true; recognition.continuous = true;
+    recognition.onstart = () => { isRecording = true; updateStatus('מקליט — Chrome', true); startTimer(); setRecordingUI(true); };
+    recognition.onresult = (event) => {
+      let interim = '', final = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript;
+        else interim += event.results[i][0].transcript;
+      }
+      if (final) appendTranscript(final + ' ', true);
+      if (interim) appendTranscript(interim, false);
+    };
+    recognition.onerror = (e) => { console.error(e.error); if (e.error !== 'no-speech') stopRecording(); };
+    recognition.onend = () => { if (isRecording && recognition) { try { recognition.start(); } catch(e) { stopRecording(); } } else stopRecording(); };
+    try { recognition.start(); } catch(e) { alert('שגיאה בהפעלת הקלטה'); }
+  }
+
+  /* ── FILE HANDLERS ──────────────────────────────────────── */
+  function handleFile(file) {
+    if (!file) return;
+    const map = { local:transcribeLocal, ivrit:transcribeIvrit, openai:transcribeOpenAI, azure:transcribeAzure, gemini:transcribeGemini };
+    (map[selectedEngine] || transcribeCloud)(file);
+  }
+  document.getElementById('fileIn').onchange  = (e) => { handleFile(e.target.files[0]); e.target.value=''; };
+  document.getElementById('fileIn2').onchange = (e) => { handleFile(e.target.files[0]); e.target.value=''; };
+
+  async function transcribeCloud(file) {
+    showProgress(true);
+    const fd = new FormData(); fd.append('file', file); fd.append('model','scribe_v2');
+    const url = selectedEngine === 'elevenlabs'
+      ? 'https://api.elevenlabs.io/v1/scribe'
+      : 'https://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true';
+    try {
+      const resp = await fetch(url, { method:'POST', headers:{'xi-api-key':apiKey,'Authorization':`Token ${apiKey}`}, body:fd });
+      const data = await resp.json();
+      const text = selectedEngine === 'elevenlabs' ? data.transcript : data.results.channels[0].alternatives[0].transcript;
+      appendTranscript(text, true);
+    } catch { alert('שגיאה בהעלאת הקובץ'); }
+    showProgress(false);
+  }
+
+  async function transcribeOpenAI(file) {
+    showProgress(true, 'שולח ל-OpenAI...');
+    const fd = new FormData(); fd.append('file',file); fd.append('model','whisper-1'); fd.append('language','he');
+    try {
+      const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`}, body:fd });
+      const data = await resp.json();
+      if (data.text) appendTranscript(data.text, true); else alert('שגיאה: ' + (data.error?.message || 'לא התקבל טקסט'));
+    } catch { alert('שגיאה בתקשורת עם OpenAI'); }
+    showProgress(false);
+  }
+
+  async function transcribeIvrit(file) {
+    showProgress(true, 'מעלה ל-Ivrit.ai...');
+    const fd = new FormData(); fd.append('audio', file);
+    try {
+      const resp = await fetch('https://api.ivrit.ai/api/transcribe', { method:'POST', headers:{'Authorization':`Bearer ${apiKey}`}, body:fd });
+      const data = await resp.json();
+      if (data.text) appendTranscript(data.text, true); else alert('התמלול בביצוע או שחלה שגיאה');
+    } catch { alert('שגיאה בתקשורת עם Ivrit.ai'); }
+    showProgress(false);
+  }
+
+  async function transcribeAzure(file) {
+    showProgress(true, 'מעלה ל-Azure...');
+    try {
+      const url = `https://${azureRegion}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-05-15-preview`;
+      const fd = new FormData(); fd.append('audio', file);
+      fd.append('definition', JSON.stringify({ locales:['he-IL'], profanityFilterMode:'None' }));
+      const resp = await fetch(url, { method:'POST', headers:{'Ocp-Apim-Subscription-Key':apiKey}, body:fd });
+      const data = await resp.json();
+      if (data.combinedPhrases?.[0]) appendTranscript(data.combinedPhrases[0].text, true);
+      else alert('שגיאה בתמלול Azure');
+    } catch { alert('שגיאה בתקשורת עם Azure'); }
+    showProgress(false);
+  }
+
+  async function transcribeGemini(file) {
+    showProgress(true, 'מעבד עם Gemini...');
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contents:[{ parts:[
+            { text:'אנא תמלל את קובץ השמע המצורף בצורה מדויקת מילה במילה. אל תוסיף פרשנות, רק את התמליל.' },
+            { inline_data:{ mime_type:file.type, data:base64Data } }
+          ]}]})
+        });
+        const result = await response.json();
+        if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+          appendTranscript(result.candidates[0].content.parts[0].text, true);
+        } else {
+          console.error(result);
+          alert('שגיאה בתמלול Gemini: ' + (result.error?.message || 'לא התקבלו תוצאות'));
+        }
+        showProgress(false);
+      };
+    } catch { alert('שגיאה בתקשורת עם Gemini'); showProgress(false); }
+  }
+
+  async function transcribeLocal(file) {
+    showProgress(true, 'טוען מודל Whisper (פעם ראשונה עשויה לקחת זמן)...');
+    try {
+      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+      if (!transcriber || transcriber._modelId !== `Xenova/whisper-${localModelSize}`) {
+        updateStatus('טוען מודל...', true);
+        transcriber = await pipeline('automatic-speech-recognition', `Xenova/whisper-${localModelSize}`, {
+          progress_callback: (p) => { if (p.status === 'progress') updateProgress(p.progress, `טוען: ${Math.round(p.progress)}%`); }
+        });
+        transcriber._modelId = `Xenova/whisper-${localModelSize}`;
+      }
+      updateStatus('מעבד...', true); updateProgress(0, 'מנתח שמע...');
+      const audioData = await readAudioAsFloat32(file);
+      const output = await transcriber(audioData, { language:'hebrew', task:'transcribe', chunk_length_s:30, stride_length_s:5 });
+      appendTranscript(output.text, true); updateStatus('מוכן', false);
+    } catch (err) { console.error(err); alert('שגיאה בתמלול מקומי. וודאו שיש מספיק זיכרון RAM.'); }
+    showProgress(false);
+  }
+
+  async function readAudioAsFloat32(file) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    return buf.getChannelData(0);
+  }
+
+  /* ── HELPERS ────────────────────────────────────────────── */
+  let lastFinalText = '';
+
+  function appendTranscript(text, isFinal) {
+    const el = document.getElementById('transcript');
+    if (isFinal) { lastFinalText += text + ' '; el.textContent = lastFinalText; }
+    else el.textContent = lastFinalText + text;
+    const words = el.textContent.trim() ? el.textContent.trim().split(/\s+/).length : 0;
+    ['wordCount','wordCountMobile'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent=words; });
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function updateStatus(txt, active) {
+    document.getElementById('statusText').textContent = txt;
+    document.getElementById('statusDot').className = 's-dot ' + (active ? (isRecording ? 'recording' : 'active') : '');
+  }
+
+  function startTimer() {
+    seconds = 0; clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = Math.floor(seconds/60).toString().padStart(2,'0');
+      const s = (seconds%60).toString().padStart(2,'0');
+      const t = `${m}:${s}`;
+      ['timer','timerMobile'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent=t; });
+    }, 1000);
+  }
+
+  function showProgress(show, label = 'מעבד קובץ...') {
+    document.getElementById('uploadProgress').style.display = show ? '' : 'none';
+    document.getElementById('progressLabel').textContent = label;
+    if (!show) updateProgress(0);
+  }
+
+  function updateProgress(pct, label) {
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPercent').textContent = Math.round(pct) + '%';
+    if (label) document.getElementById('progressLabel').textContent = label;
+  }
+
+  function copyText() {
+    navigator.clipboard.writeText(document.getElementById('transcript').textContent).then(() => {
+      document.querySelectorAll('[onclick="copyText()"]').forEach(btn => {
+        const orig = btn.innerHTML; btn.innerHTML = '✅';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+      });
+    });
+  }
+
+  function downloadText() {
+    const blob = new Blob([document.getElementById('transcript').textContent], { type:'text/plain;charset=utf-8' });
+    const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:`transcription-${Date.now()}.txt` });
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  function clearText() {
+    if (!confirm('למחוק את כל הטקסט?')) return;
+    document.getElementById('transcript').textContent = '';
+    lastFinalText = '';
+    ['wordCount','wordCountMobile'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent='0'; });
+  }
+
+  function toggleTheme() {
+    const isLight = document.body.getAttribute('data-theme') === 'light';
+    document.body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+    localStorage.setItem('el_theme', isLight ? 'dark' : 'light');
+  }
+
+  /* ── VISUALIZER ─────────────────────────────────────────── */
+  setInterval(() => {
+    document.querySelectorAll('.v-bar').forEach(b => {
+      b.style.height = isRecording ? (Math.random()*16+3)+'px' : '3px';
+    });
+  }, 100);
+
+  /* ── INIT ───────────────────────────────────────────────── */
+  const savedTheme = localStorage.getItem('el_theme');
+  if (savedTheme) document.body.setAttribute('data-theme', savedTheme);
+
+  // Restore saved key
+  const def0 = ENGINE_DEFS[selectedEngine] || {};
+  const savedKey = (def0.lsKey && localStorage.getItem(def0.lsKey)) || localStorage.getItem('el_api_key') || '';
+  if (savedKey) {
+    apiKey = savedKey;
+    document.getElementById('setupOverlay').classList.add('hidden');
+  }
+
+  selectEngine(selectedEngine);
+  updateUI();
+</script>
+</body>
 </html>
