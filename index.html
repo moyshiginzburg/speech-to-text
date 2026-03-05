@@ -213,6 +213,16 @@ select:focus{border-color:var(--accent);}
         <div class="eo-name">Whisper מקומי</div>
         <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
       </div>
+      <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
+        <div class="eo-icon">☁️</div>
+        <div class="eo-name">Azure</div>
+        <div class="eo-desc">Speech-to-Text<br>דורש API key + אזור</div>
+      </div>
+      <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
+        <div class="eo-icon">✨</div>
+        <div class="eo-name">Gemini</div>
+        <div class="eo-desc">Google AI LLM<br>תמלול מילה במילה, קבצים בלבד</div>
+      </div>
     </div>
 
     <!-- Local model size selector (shown only when local engine is selected) -->
@@ -223,6 +233,34 @@ select:focus{border-color:var(--accent);}
         <option value="small" selected>Small (מומלץ ✅) — ~244MB · איזון טוב</option>
         <option value="medium">Medium (איטי) — ~769MB · דיוק גבוה ⚠️ דורש ~1.5GB RAM</option>
       </select>
+    </div>
+
+    <!-- Azure region selector (shown only when Azure engine is selected) -->
+    <div id="azureRegionSection" style="display:none;margin-bottom:14px;text-align:right;">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🌍 אזור Azure (Region)</label>
+      <select id="azureRegionSelect" onchange="setAzureRegion(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:ltr;text-align:left;">
+        <option value="eastus">eastus</option>
+        <option value="eastus2">eastus2</option>
+        <option value="westus">westus</option>
+        <option value="westus2">westus2</option>
+        <option value="westeurope">westeurope</option>
+        <option value="northeurope">northeurope</option>
+        <option value="southeastasia">southeastasia</option>
+        <option value="eastasia">eastasia</option>
+        <option value="centralus">centralus</option>
+        <option value="uksouth">uksouth</option>
+        <option value="japaneast">japaneast</option>
+        <option value="australiaeast">australiaeast</option>
+        <option value="canadacentral">canadacentral</option>
+        <option value="switzerlandnorth">switzerlandnorth</option>
+        <option value="francecentral">francecentral</option>
+        <option value="koreacentral">koreacentral</option>
+        <option value="brazilsouth">brazilsouth</option>
+        <option value="israelcentral">israelcentral</option>
+      </select>
+      <p style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5;">
+        האזור שבו יצרת את משאב Speech ב-Azure Portal.
+      </p>
     </div>
 
     <!-- API key (shown for engines that need it) -->
@@ -389,8 +427,9 @@ select:focus{border-color:var(--accent);}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let apiKey = '';
-let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram' | 'ivrit' | 'openai' | 'local'
+let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram' | 'ivrit' | 'openai' | 'local' | 'azure' | 'gemini'
 let localModelSize = localStorage.getItem('local_model_size') || 'small';
+let azureRegion = localStorage.getItem('azure_region') || 'eastus';
 const localModelMap = {
   'tiny':   'Xenova/whisper-tiny',
   'small':  'Xenova/whisper-small',
@@ -431,7 +470,7 @@ window.addEventListener('load', () => {
   const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
   selectEngine(savedEngine, true);
   // Load API key for the saved engine (Google needs no key)
-  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key' };
+  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key', azure: 'azure_api_key', gemini: 'gemini_api_key' };
   const storageKey = keyMap[savedEngine];
   if (storageKey) {
     const savedKey = localStorage.getItem(storageKey);
@@ -458,7 +497,9 @@ function selectEngine(e, silent) {
   document.getElementById('opt-ivrit').classList.toggle('selected', e === 'ivrit');
   document.getElementById('opt-openai').classList.toggle('selected', e === 'openai');
   document.getElementById('opt-local').classList.toggle('selected', e === 'local');
-  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai');
+  document.getElementById('opt-azure').classList.toggle('selected', e === 'azure');
+  document.getElementById('opt-gemini').classList.toggle('selected', e === 'gemini');
+  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai' || e === 'azure' || e === 'gemini');
   document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
   // Update API section content per engine
   if (e === 'elevenlabs') {
@@ -485,12 +526,29 @@ function selectEngine(e, silent) {
     document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
     document.getElementById('apiInput').placeholder = 'sk-...';
     document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
+  } else if (e === 'azure') {
+    document.getElementById('apiLabel').textContent = '🔑 Azure Speech API Key';
+    document.getElementById('apiLink').href = 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices';
+    document.getElementById('apiLink').textContent = 'portal.azure.com → Speech Services';
+    document.getElementById('apiInput').placeholder = 'מפתח API של Azure Speech...';
+    document.getElementById('apiInput').value = localStorage.getItem('azure_api_key') || '';
+  } else if (e === 'gemini') {
+    document.getElementById('apiLabel').textContent = '🔑 Google Gemini API Key';
+    document.getElementById('apiLink').href = 'https://aistudio.google.com/apikey';
+    document.getElementById('apiLink').textContent = 'aistudio.google.com/apikey';
+    document.getElementById('apiInput').placeholder = 'AIza...';
+    document.getElementById('apiInput').value = localStorage.getItem('gemini_api_key') || '';
   }
   if (!silent) localStorage.setItem('el_engine', e);
   // Show/hide local model size section in overlay
   document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
   if (e === 'local') {
     document.getElementById('localModelSizeOverlay').value = localModelSize;
+  }
+  // Show/hide Azure region section in overlay
+  document.getElementById('azureRegionSection').style.display = (e === 'azure') ? '' : 'none';
+  if (e === 'azure') {
+    document.getElementById('azureRegionSelect').value = azureRegion;
   }
 }
 
@@ -508,8 +566,14 @@ function setLocalModelSize(size) {
   if (noteEl) noteEl.textContent = localModelNotes[size] || '';
 }
 
+function setAzureRegion(region) {
+  azureRegion = region;
+  localStorage.setItem('azure_region', region);
+  document.getElementById('azureRegionSelect').value = region;
+}
+
 function startApp() {
-  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai') {
+  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai' || engine === 'azure' || engine === 'gemini') {
     const v = document.getElementById('apiInput').value.trim();
     if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
     apiKey = v;
@@ -517,6 +581,8 @@ function startApp() {
     else if (engine === 'deepgram') localStorage.setItem('dg_api_key', v);
     else if (engine === 'ivrit') localStorage.setItem('ivrit_api_key', v);
     else if (engine === 'openai') localStorage.setItem('openai_api_key', v);
+    else if (engine === 'azure') localStorage.setItem('azure_api_key', v);
+    else if (engine === 'gemini') localStorage.setItem('gemini_api_key', v);
   }
   localStorage.setItem('el_engine', engine);
   localStorage.setItem('el_started', '1');
@@ -530,9 +596,11 @@ function updateUI() {
   const isIvrit = engine === 'ivrit';
   const isOpenAI = engine === 'openai';
   const isLocal = engine === 'local';
-  const needsKey = isEL || isDG || isIvrit || isOpenAI;
-  const fileOnly = isIvrit || isOpenAI || isLocal;
-  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי' };
+  const isAzure = engine === 'azure';
+  const isGemini = engine === 'gemini';
+  const needsKey = isEL || isDG || isIvrit || isOpenAI || isAzure || isGemini;
+  const fileOnly = isIvrit || isOpenAI || isLocal || isAzure || isGemini;
+  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי', azure: 'Azure', gemini: 'Gemini' };
   document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
   document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
   document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
@@ -554,6 +622,12 @@ function updateUI() {
   } else if (isOpenAI) {
     document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
     document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
+  } else if (isAzure) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 Azure Speech API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>Azure Speech-to-Text</strong><br>אזור: <strong>' + azureRegion + '</strong> · קבצים בלבד';
+  } else if (isGemini) {
+    document.getElementById('apiKeyCardHead').textContent = '🔑 Google Gemini API Key';
+    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-2.0-flash</strong><br>תמלול LLM · קבצים בלבד';
   }
   if (fileOnly) {
     micLabel.textContent = '🗂️ מנוע זה תומך בהעלאת קובץ בלבד';
@@ -579,7 +653,7 @@ function togField(field, btnId) {
 
 // ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (engine === 'ivrit' || engine === 'openai' || engine === 'local') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
+  if (engine === 'ivrit' || engine === 'openai' || engine === 'local' || engine === 'azure' || engine === 'gemini') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
   if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
@@ -951,6 +1025,66 @@ async function uploadFile(file) {
       }
       const data = await res.json();
       text = data.text || '';
+    } else if (engine === 'azure') {
+      stat.textContent = 'שולח ל-Azure Speech…';
+      const azLangMap = {heb:'he-IL', ara:'ar-IL', eng:'en-US', rus:'ru-RU', fra:'fr-FR'};
+      const azLang = azLangMap[document.getElementById('langSel').value] || 'he-IL';
+      const azUrl = `https://${azureRegion}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${azLang}&format=detailed`;
+      const azHeaders = {
+        'Ocp-Apim-Subscription-Key': apiKey,
+        'Content-Type': file.type || 'audio/wav',
+        'Accept': 'application/json'
+      };
+      const res = await fetch(azUrl, {
+        method: 'POST',
+        headers: azHeaders,
+        body: file
+      });
+      bar.style.width = '80%';
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error?.message || err.Message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.RecognitionStatus === 'Success') {
+        text = data.NBest?.[0]?.Display || data.DisplayText || '';
+      } else {
+        text = data.DisplayText || '';
+      }
+    } else if (engine === 'gemini') {
+      stat.textContent = 'שולח ל-Gemini…';
+      const arrBuf = await file.arrayBuffer();
+      const base64Audio = btoa(new Uint8Array(arrBuf).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+      const mimeType = file.type || 'audio/wav';
+      const gemLangMap = {heb:'עברית', ara:'ערבית', eng:'אנגלית', rus:'רוסית', fra:'צרפתית'};
+      const gemLang = gemLangMap[document.getElementById('langSel').value] || 'עברית';
+      const geminiPayload = {
+        contents: [{
+          parts: [
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Audio
+              }
+            },
+            {
+              text: `תמלל את קובץ האודיו הזה מילה במילה ב${gemLang}. כלול סימני פיסוק (נקודה, פסיק, סימן שאלה, סימן קריאה וכו') וירידות שורה במקומות המתאימים. אל תוסיף הסברים, כותרות או הערות — רק את התמלול עצמו.`
+            }
+          ]
+        }]
+      };
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiPayload)
+      });
+      bar.style.width = '80%';
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     } else if (engine === 'local') {
       // ── LOCAL WHISPER (Transformers.js — runs entirely in the browser) ──
       if (!localWhisperPipeline) {
