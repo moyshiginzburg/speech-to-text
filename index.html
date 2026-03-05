@@ -211,8 +211,18 @@ select:focus{border-color:var(--accent);}
       <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
         <div class="eo-icon">🆓</div>
         <div class="eo-name">Whisper מקומי</div>
-        <div class="eo-desc">חינמי, בדפדפן<br>ללא API key</div>
+        <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
       </div>
+    </div>
+
+    <!-- Local model size selector (shown only when local engine is selected) -->
+    <div id="localModelSection" style="display:none;margin-top:14px;text-align:right;">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🧠 גודל מודל Whisper</label>
+      <select id="localModelSizeOverlay" onchange="setLocalModelSize(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
+        <option value="tiny">Tiny (מהיר) — ~40MB · דיוק נמוך</option>
+        <option value="small" selected>Small (מומלץ ✅) — ~244MB · איזון טוב</option>
+        <option value="medium">Medium (איטי) — ~769MB · דיוק גבוה ⚠️ דורש ~1.5GB RAM</option>
+      </select>
     </div>
 
     <!-- API key (shown for engines that need it) -->
@@ -336,6 +346,22 @@ select:focus{border-color:var(--accent);}
       </div>
     </div>
 
+    <!-- Local model size card (shown only for local engine) -->
+    <div class="card" id="localModelCard" style="display:none;">
+      <div class="card-head">🧠 גודל מודל Whisper</div>
+      <div class="card-body" style="padding:6px 14px;">
+        <div class="set-row">
+          <span class="set-label">מודל</span>
+          <select id="localModelSizeSidebar" onchange="setLocalModelSize(this.value)" style="padding:4px 6px;border-radius:6px;border:1px solid var(--border,#ddd);font-size:12px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
+            <option value="tiny">Tiny (~40MB)</option>
+            <option value="small" selected>Small (~244MB) ✅</option>
+            <option value="medium">Medium (~769MB) ⚠️</option>
+          </select>
+        </div>
+        <p style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5;" id="localModelNote">מודל Small: איזון טוב בין מהירות ודיוק.</p>
+      </div>
+    </div>
+
     <!-- API key mini (engines with API key) -->
     <div class="card" id="apiKeyCard">
       <div class="card-head" id="apiKeyCardHead">🔑 ElevenLabs API Key</div>
@@ -364,6 +390,17 @@ select:focus{border-color:var(--accent);}
 // ── STATE ──────────────────────────────────────────────────────────────────
 let apiKey = '';
 let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram' | 'ivrit' | 'openai' | 'local'
+let localModelSize = localStorage.getItem('local_model_size') || 'small';
+const localModelMap = {
+  'tiny':   'Xenova/whisper-tiny',
+  'small':  'Xenova/whisper-small',
+  'medium': 'Xenova/whisper-medium'
+};
+const localModelNotes = {
+  'tiny':   'מודל Tiny: מהיר מאוד, דיוק נמוך יחסית.',
+  'small':  'מודל Small: איזון טוב בין מהירות ודיוק.',
+  'medium': '⚠️ מודל Medium: דיוק גבוה, דורש ~1.5GB RAM ועלול להיות איטי.'
+};
 let isRec = false;
 let ws = null;
 let audioCtx = null;
@@ -450,6 +487,25 @@ function selectEngine(e, silent) {
     document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
   }
   if (!silent) localStorage.setItem('el_engine', e);
+  // Show/hide local model size section in overlay
+  document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
+  if (e === 'local') {
+    document.getElementById('localModelSizeOverlay').value = localModelSize;
+  }
+}
+
+function setLocalModelSize(size) {
+  if (size !== localModelSize) {
+    localModelSize = size;
+    localStorage.setItem('local_model_size', size);
+    localWhisperPipeline = null; // reset so the new model is loaded next time
+  }
+  // Sync both selectors
+  document.getElementById('localModelSizeOverlay').value = size;
+  document.getElementById('localModelSizeSidebar').value = size;
+  // Update sidebar note
+  const noteEl = document.getElementById('localModelNote');
+  if (noteEl) noteEl.textContent = localModelNotes[size] || '';
 }
 
 function startApp() {
@@ -480,6 +536,12 @@ function updateUI() {
   document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
   document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
   document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
+  document.getElementById('localModelCard').style.display = isLocal ? '' : 'none';
+  if (isLocal) {
+    document.getElementById('localModelSizeSidebar').value = localModelSize;
+    const noteEl = document.getElementById('localModelNote');
+    if (noteEl) noteEl.textContent = localModelNotes[localModelSize] || '';
+  }
   if (isEL) {
     document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
     document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>קבצים: <strong>scribe_v2</strong>';
@@ -892,6 +954,7 @@ async function uploadFile(file) {
     } else if (engine === 'local') {
       // ── LOCAL WHISPER (Transformers.js — runs entirely in the browser) ──
       if (!localWhisperPipeline) {
+        const modelId = localModelMap[localModelSize] || 'Xenova/whisper-small';
         stat.textContent = '⬇️ מוריד מודל Whisper (פעם ראשונה בלבד)…';
         bar.style.width = '5%';
         try {
@@ -900,7 +963,7 @@ async function uploadFile(file) {
           env.useBrowserCache = true;
           localWhisperPipeline = await pipeline(
             'automatic-speech-recognition',
-            'Xenova/whisper-tiny',
+            modelId,
             {
               progress_callback: (p) => {
                 if (p.status === 'downloading' && typeof p.progress === 'number') {
