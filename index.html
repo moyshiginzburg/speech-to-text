@@ -1,1261 +1,872 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>כתיבה קולית</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@300;400;600&family=Heebo:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f0ebe3;
-  --paper: #fffdf9;
-  --ink: #1c1c1e;
-  --ink-2: #444;
-  --ink-3: #888;
-  --accent: #b5451b;
-  --accent-2: #d4541f;
-  --accent-soft: rgba(181,69,27,0.1);
-  --border: #ddd8d0;
-  --green: #2d7a3a;
-  --shadow: 0 4px 32px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
-  --r: 10px;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Heebo',sans-serif;background:var(--bg);background-image:radial-gradient(circle at 20% 80%,rgba(181,69,27,0.05) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(181,69,27,0.04) 0%,transparent 50%);min-height:100vh;direction:rtl;color:var(--ink);-webkit-text-size-adjust:100%;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech To Text — תמלול חכם ומהיר</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ink: #1e293b;
+      --ink-light: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --accent: #f1f5f9;
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --ink: #f1f5f9;
+      --ink-light: #94a3b8;
+      --primary: #60a5fa;
+      --primary-hover: #3b82f6;
+      --border: #334155;
+      --accent: #1e293b;
+    }
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--ink); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: background 0.3s; }
+    
+    /* SIDEBAR */
+    .sidebar { width: 320px; border-left: 1px solid var(--border); background: var(--card); display: flex; flex-direction: column; overflow-y: auto; transition: width 0.3s ease; }
+    .sidebar-head { padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    
+    .sidebar-section { padding: 20px; border-bottom: 1px solid var(--border); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-light); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
 
-/* ── TOPBAR ── */
-.topbar{height:56px;background:rgba(255,253,249,0.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:200;}
-.brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.brand-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
-.brand-name{font-size:15px;font-weight:600;color:var(--accent);letter-spacing:-0.3px;white-space:nowrap;}
-.doc-name{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Heebo',sans-serif;font-size:14px;color:var(--ink);direction:rtl;text-overflow:ellipsis;overflow:hidden;padding:4px 6px;border-radius:5px;transition:background .15s;}
-.doc-name:hover{background:rgba(0,0,0,0.04);}
-.doc-name:focus{background:rgba(181,69,27,0.07);}
-.topbar-btns{display:flex;gap:6px;flex-shrink:0;}
-.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
-.icon-btn:hover{background:var(--accent-soft);border-color:var(--accent);}
-.icon-btn:active{transform:scale(.93);}
+    /* ENGINE SELECTOR */
+    .engine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .engine-opt { 
+      padding: 12px 8px; border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s; background: var(--bg); 
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .engine-opt:hover { border-color: var(--primary); transform: translateY(-2px); }
+    .engine-opt.active { border-color: var(--primary); background: rgba(59, 130, 246, 0.08); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
+    .eo-icon { font-size: 20px; margin-bottom: 2px; }
+    .eo-name { font-size: 13px; font-weight: 700; }
+    .eo-desc { font-size: 10px; color: var(--ink-light); line-height: 1.2; }
 
-/* ── WELCOME OVERLAY ── */
-.overlay{position:fixed;inset:0;background:rgba(240,235,227,0.97);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
-.overlay.hidden{display:none;}
-.welcome-card{background:var(--paper);border-radius:16px;box-shadow:var(--shadow);padding:32px 28px;max-width:520px;width:100%;}
-.welcome-card h2{font-size:22px;font-weight:600;margin-bottom:6px;color:var(--ink);text-align:center;}
-.welcome-card .subtitle{font-size:13px;color:var(--ink-3);text-align:center;margin-bottom:24px;}
+    /* CONTROLS */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    
+    .input-group { margin-bottom: 12px; position: relative; }
+    .input-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink-light); }
+    input, select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--ink); font-size: 14px; transition: border-color 0.2s; outline: none; }
+    input:focus { border-color: var(--primary); }
+    
+    .btn { 
+      width: 100%; padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; 
+      display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { background: var(--ink-light); opacity: 0.6; cursor: not-allowed; }
 
-/* Engine picker */
-.engine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
-.engine-opt{border:2px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
-.engine-opt:hover{border-color:var(--accent);background:var(--accent-soft);}
-.engine-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
-.engine-opt .eo-icon{font-size:28px;margin-bottom:6px;}
-.engine-opt .eo-name{font-size:13px;font-weight:600;color:var(--ink);}
-.engine-opt .eo-desc{font-size:11px;color:var(--ink-3);margin-top:2px;line-height:1.4;}
+    /* MAIN CONTENT */
+    .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+    .toolbar { height: 64px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--card); }
+    
+    .content-area { flex: 1; padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; align-items: center; }
+    
+    #transcript { 
+      width: 100%; max-width: 800px; min-height: 400px; padding: 24px; border-radius: 20px; background: var(--card); border: 1px solid var(--border);
+      font-size: 18px; line-height: 1.6; white-space: pre-wrap; outline: none; transition: box-shadow 0.3s;
+    }
+    #transcript:focus { box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    #transcript:empty:before { content: "הטקסט המתומלל יופיע כאן..."; color: var(--ink-light); font-style: italic; }
 
-/* API key section */
-.api-section{margin-bottom:16px;}
-.api-section label{font-size:13px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;}
-.api-input-wrap{position:relative;}
-.api-input{width:100%;padding:11px 40px 11px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:'Heebo',sans-serif;direction:ltr;text-align:left;outline:none;color:var(--ink);transition:border-color .2s;background:white;}
-.api-input:focus{border-color:var(--accent);}
-.api-input::placeholder{color:#bbb;}
-.eye-btn{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink-3);padding:4px;}
-.api-note{font-size:11px;color:var(--ink-3);background:rgba(181,69,27,0.06);border-radius:8px;padding:9px 10px;margin-bottom:16px;line-height:1.6;}
-.api-note a{color:var(--accent);text-decoration:none;}
+    /* STATUS & STATS */
+    .status-bar { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+    .dot.recording { background: var(--danger); animation: pulse 1.5s infinite; }
+    .dot.active { background: var(--success); }
+    
+    .stats { display: flex; gap: 24px; font-size: 12px; color: var(--ink-light); }
+    .stat-item b { color: var(--ink); }
 
-.btn-main{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;font-family:'Heebo',sans-serif;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.btn-main:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(181,69,27,0.3);}
-.btn-main:active{transform:scale(.98);}
-.btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    /* MODALS/OVERLAYS */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: var(--card); width: 100%; max-width: 440px; border-radius: 24px; padding: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; }
+    .modal-close { position: absolute; top: 20px; left: 20px; cursor: pointer; font-size: 20px; color: var(--ink-light); }
 
-/* ── MAIN LAYOUT ── */
-.layout{display:flex;align-items:flex-start;gap:16px;padding:20px 16px;max-width:1100px;margin:0 auto;}
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-/* ── DOCUMENT ── */
-.doc-wrap{flex:1;min-width:0;}
-.doc-paper{background:var(--paper);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;}
-.listen-banner{display:flex;align-items:center;gap:10px;padding:10px 20px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;font-size:13px;font-weight:500;max-height:0;overflow:hidden;transition:max-height .3s;}
-.listen-banner.active{max-height:48px;}
-.pulse{width:10px;height:10px;border-radius:50%;background:white;flex-shrink:0;position:relative;}
-.pulse::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);animation:pulse-ring 1.2s ease-out infinite;}
-@keyframes pulse-ring{0%{transform:scale(1);opacity:1;}100%{transform:scale(2.8);opacity:0;}}
-.interim-span{flex:1;font-style:italic;opacity:.88;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-.editor{min-height:500px;padding:40px 52px;font-family:'Noto Serif Hebrew',serif;font-size:18px;line-height:2;color:var(--ink);direction:rtl;text-align:right;outline:none;word-wrap:break-word;white-space:pre-wrap;caret-color:var(--accent);}
-.editor:empty::before{content:attr(data-placeholder);color:var(--ink-3);font-style:italic;pointer-events:none;}
+    /* MOBILE ADJUSTMENTS */
+    @media (max-width: 900px) {
+      .sidebar { position: fixed; right: -320px; top: 0; bottom: 0; z-index: 2000; box-shadow: -10px 0 30px rgba(0,0,0,0.1); }
+      .sidebar.open { right: 0; }
+      .menu-toggle { display: block !important; }
+    }
+    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--ink); }
+    
+    .badge { padding: 4px 8px; border-radius: 6px; background: var(--accent); font-size: 11px; font-weight: 700; color: var(--primary); }
 
-/* ── SIDEBAR ── */
-.sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
-.card{background:var(--paper);border-radius:var(--r);box-shadow:0 1px 10px rgba(0,0,0,0.06);overflow:hidden;}
-.card-head{padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3);}
-.card-body{padding:14px;}
-
-/* Mic */
-.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
-.mic-btn{width:76px;height:76px;border-radius:50%;border:2px solid var(--border);background:white;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;user-select:none;}
-.mic-btn:hover{border-color:var(--accent);background:var(--accent-soft);}
-.mic-btn:active{transform:scale(.94);}
-.mic-btn.on{background:var(--accent);border-color:var(--accent);animation:mic-breathe 1.8s ease-in-out infinite;}
-@keyframes mic-breathe{0%,100%{box-shadow:0 0 0 8px rgba(181,69,27,.12),0 0 0 16px rgba(181,69,27,.05);}50%{box-shadow:0 0 0 12px rgba(181,69,27,.10),0 0 0 24px rgba(181,69,27,.04);}}
-.mic-label{font-size:12px;color:var(--ink-3);text-align:center;font-weight:500;line-height:1.4;}
-.mic-label.on{color:var(--accent);font-weight:600;}
-.wave{display:flex;gap:3px;align-items:center;height:32px;opacity:0;transition:opacity .3s;}
-.wave.on{opacity:1;}
-.wave-bar{width:3px;background:var(--accent);border-radius:2px;height:3px;}
-.wave.on .wave-bar:nth-child(1){animation:wave-a .9s ease-in-out infinite 0.0s;}
-.wave.on .wave-bar:nth-child(2){animation:wave-a .9s ease-in-out infinite .13s;}
-.wave.on .wave-bar:nth-child(3){animation:wave-a .9s ease-in-out infinite .26s;}
-.wave.on .wave-bar:nth-child(4){animation:wave-a .9s ease-in-out infinite .19s;}
-.wave.on .wave-bar:nth-child(5){animation:wave-a .9s ease-in-out infinite .06s;}
-.wave.on .wave-bar:nth-child(6){animation:wave-a .9s ease-in-out infinite .32s;}
-.wave.on .wave-bar:nth-child(7){animation:wave-a .9s ease-in-out infinite .09s;}
-@keyframes wave-a{0%,100%{height:3px;}50%{height:24px;}}
-
-/* Upload */
-.upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.upload-area:hover,.upload-area.drag{border-color:var(--accent);background:var(--accent-soft);}
-.upload-area p{font-size:12px;color:var(--ink-3);margin-top:4px;}
-.upload-icon{font-size:24px;}
-.upload-progress{display:none;margin-top:10px;}
-.upload-progress.show{display:block;}
-.progress-bar-wrap{background:#eee;border-radius:4px;height:6px;overflow:hidden;margin-top:6px;}
-.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:4px;width:0%;transition:width .3s;}
-.upload-status{font-size:11px;color:var(--ink-3);margin-top:4px;}
-
-/* Settings */
-.set-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f2ee;gap:8px;}
-.set-row:last-child{border-bottom:none;}
-.set-label{font-size:13px;color:var(--ink-2);font-weight:500;}
-select{font-family:'Heebo',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:white;color:var(--ink);outline:none;direction:rtl;max-width:130px;}
-select:focus{border-color:var(--accent);}
-.tog{width:38px;height:22px;background:#ddd;border-radius:11px;cursor:pointer;border:none;position:relative;flex-shrink:0;transition:background .2s;-webkit-tap-highlight-color:transparent;}
-.tog::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:2px;right:2px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
-.tog.on{background:var(--accent);}
-.tog.on::after{transform:translateX(-16px);}
-
-/* Stats */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.stat-box{background:#f9f7f4;border-radius:8px;padding:10px 8px;text-align:center;}
-.stat-n{font-family:'Noto Serif Hebrew',serif;font-size:24px;font-weight:600;color:var(--accent);line-height:1;}
-.stat-l{font-size:11px;color:var(--ink-3);margin-top:3px;}
-
-/* Engine badge */
-.engine-badge{font-size:11px;background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:3px 8px;font-weight:600;cursor:pointer;}
-
-/* API mini */
-.api-mini{font-size:11px;color:var(--ink-3);background:#f9f7f4;border-radius:7px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.api-mini-key{font-family:monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;max-width:130px;}
-.api-mini-change{color:var(--accent);cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;background:none;border:none;font-family:'Heebo',sans-serif;}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;right:50%;transform:translateX(50%) translateY(80px);background:#222;color:white;padding:10px 18px;border-radius:10px;font-size:14px;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none;}
-.toast.show{transform:translateX(50%) translateY(0);}
-.toast.err{background:var(--accent);}
-.toast.ok{background:var(--green);}
-
-/* Mobile floating mic */
-.mob-mic{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:300;}
-.mob-mic-btn{width:70px;height:70px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 24px rgba(181,69,27,.4);transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.mob-mic-btn.on{animation:mob-pulse 1.5s ease-in-out infinite;}
-@keyframes mob-pulse{0%,100%{box-shadow:0 6px 24px rgba(181,69,27,.4),0 0 0 0 rgba(181,69,27,.2);}50%{box-shadow:0 6px 30px rgba(181,69,27,.5),0 0 0 14px rgba(181,69,27,.0);}}
-
-/* Responsive */
-@media(max-width:700px){
-  .layout{flex-direction:column;padding:12px;}
-  .sidebar{width:100%;}
-  .sidebar > .card:first-child{display:none;}
-  .mob-mic{display:block;}
-  .editor{padding:24px 20px 100px;font-size:17px;}
-  .topbar{padding:0 12px;}
-  .brand-name{display:none;}
-}
-@media(min-width:701px){.mob-mic{display:none!important;}}
-</style>
+    #audioVisualizer { height: 40px; width: 120px; display: flex; align-items: center; gap: 3px; }
+    .bar { width: 4px; height: 4px; background: var(--primary); border-radius: 2px; transition: height 0.1s ease; }
+  </style>
 </head>
 <body>
 
-<!-- WELCOME / SETTINGS OVERLAY -->
-<div class="overlay" id="overlay">
-  <div class="welcome-card">
-    <div style="text-align:center;font-size:36px;margin-bottom:12px;">✍️</div>
-    <h2>כתיבה קולית בעברית</h2>
-    <p class="subtitle">בחר מנוע תמלול והתחל לדבר</p>
+  <!-- Overlay for initial engine/key setup -->
+  <div id="setupOverlay" class="overlay" style="display:flex">
+    <div class="modal">
+      <h2 style="margin-top:0">ברוכים הבאים 🎙️</h2>
+      <p style="color:var(--ink-light); font-size: 14px;">בחרו מנוע תמלול כדי להתחיל. מנועים מבוססי ענן דורשים מפתח API.</p>
+      
+      <div class="engine-grid">
+        <div class="engine-opt active" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
+          <div class="eo-icon">🧬</div>
+          <div class="eo-name">ElevenLabs</div>
+          <div class="eo-desc">הכי מדויק לעברית<br>דורש API key</div>
+        </div>
+        <div class="engine-opt" id="opt-deepgram" onclick="selectEngine('deepgram')">
+          <div class="eo-icon">⚡</div>
+          <div class="eo-name">Deepgram</div>
+          <div class="eo-desc">מהירות שיא (Realtime)<br>דורש API key</div>
+        </div>
+        <div class="engine-opt" id="opt-openai" onclick="selectEngine('openai')">
+          <div class="eo-icon">🤖</div>
+          <div class="eo-name">OpenAI</div>
+          <div class="eo-desc">Whisper v3-large<br>דורש API key</div>
+        </div>
+        <div class="engine-opt" id="opt-ivrit" onclick="selectEngine('ivrit')">
+          <div class="eo-icon">🇮🇱</div>
+          <div class="eo-name">Ivrit.ai</div>
+          <div class="eo-desc">מודל ישראלי חזק<br>דורש HF Token</div>
+        </div>
+        <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
+          <div class="eo-icon">🏠</div>
+          <div class="eo-name">Whisper מקומי</div>
+          <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
+        </div>
+        <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
+          <div class="eo-icon">☁️</div>
+          <div class="eo-name">Azure</div>
+          <div class="eo-desc">Speech-to-Text<br>דורש API key + אזור</div>
+        </div>
+        <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
+          <div class="eo-icon">✨</div>
+          <div class="eo-name">Gemini</div>
+          <div class="eo-desc">Google AI LLM<br>תמלול מילה במילה, קבצים בלבד</div>
+        </div>
+      </div>
 
-    <!-- Engine selector -->
-    <div class="engine-grid">
-      <div class="engine-opt selected" id="opt-elevenlabs" onclick="selectEngine('elevenlabs')">
-        <div class="eo-icon">⚡</div>
-        <div class="eo-name">ElevenLabs</div>
-        <div class="eo-desc">Scribe v2 Realtime<br>מדויק, דורש API key</div>
+      <!-- Local model size selector (shown only when local engine is selected) -->
+      <div id="localModelSection" style="display:none;margin-top:14px;text-align:right;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🧠 גודל מודל Whisper</label>
+        <select id="localModelSizeOverlay" onchange="setLocalModelSize(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
+          <option value="tiny">Tiny (מהיר) — ~40MB · דיוק נמוך</option>
+          <option value="small" selected>Small (מומלץ ✅) — ~244MB · איזון טוב</option>
+          <option value="medium">Medium (איטי) — ~769MB · דיוק גבוה ⚠️ דורש ~1.5GB RAM</option>
+        </select>
       </div>
-      <div class="engine-opt" id="opt-deepgram" onclick="selectEngine('deepgram')">
-        <div class="eo-icon">🎯</div>
-        <div class="eo-name">Deepgram</div>
-        <div class="eo-desc">Nova-3<br>מדויק, דורש API key</div>
-      </div>
-      <div class="engine-opt" id="opt-google" onclick="selectEngine('google')">
-        <div class="eo-icon">🔍</div>
-        <div class="eo-name">Google</div>
-        <div class="eo-desc">Web Speech API<br>חינם, Chrome בלבד</div>
-      </div>
-      <div class="engine-opt" id="opt-ivrit" onclick="selectEngine('ivrit')">
-        <div class="eo-icon">🇮🇱</div>
-        <div class="eo-name">ivrit.ai</div>
-        <div class="eo-desc">Whisper עברית<br>דיוק גבוה, קבצים בלבד</div>
-      </div>
-      <div class="engine-opt" id="opt-openai" onclick="selectEngine('openai')">
-        <div class="eo-icon">🤖</div>
-        <div class="eo-name">OpenAI</div>
-        <div class="eo-desc">Whisper-1<br>רב-שפתי, קבצים בלבד</div>
-      </div>
-      <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
-        <div class="eo-icon">🆓</div>
-        <div class="eo-name">Whisper מקומי</div>
-        <div class="eo-desc">חינמי, בדפדפן · בחירת גודל<br>ללא API key</div>
-      </div>
-      <div class="engine-opt" id="opt-azure" onclick="selectEngine('azure')">
-        <div class="eo-icon">☁️</div>
-        <div class="eo-name">Azure</div>
-        <div class="eo-desc">Speech-to-Text<br>מדויק, דורש API key</div>
-      </div>
-      <div class="engine-opt" id="opt-gemini" onclick="selectEngine('gemini')">
-        <div class="eo-icon">✨</div>
-        <div class="eo-name">Gemini AI</div>
-        <div class="eo-desc">תמלול מבוסס LLM<br>דורש API key</div>
-      </div>
-    </div>
 
-    <!-- Local model size selector (shown only when local engine is selected) -->
-    <div id="localModelSection" style="display:none;margin-top:14px;text-align:right;">
-      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🧠 גודל מודל Whisper</label>
-      <select id="localModelSizeOverlay" onchange="setLocalModelSize(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
-        <option value="tiny">Tiny (מהיר) — ~40MB · דיוק נמוך</option>
-        <option value="small" selected>Small (מומלץ ✅) — ~244MB · איזון טוב</option>
-        <option value="medium">Medium (איטי) — ~769MB · דיוק גבוה ⚠️ דורש ~1.5GB RAM</option>
-      </select>
-    </div>
-
-    <!-- API key (shown for engines that need it) -->
-    <div class="api-section" id="apiSection">
-      <label id="apiLabel">🔑 API Key של ElevenLabs</label>
-      <div class="api-input-wrap">
-        <input class="api-input" id="apiInput" type="password" placeholder="sk_..." autocomplete="off" autocapitalize="off" spellcheck="false" />
-        <button class="eye-btn" onclick="toggleEye()">👁</button>
+      <!-- Azure region selector (shown only when Azure engine is selected) -->
+      <div id="azureRegionSection" style="display:none;margin-bottom:14px;text-align:right;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">🌍 אזור Azure (Region)</label>
+        <select id="azureRegionSelect" onchange="setAzureRegion(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:13px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
+          <option value="eastus">East US</option>
+          <option value="westeurope">West Europe</option>
+          <option value="francecentral">France Central</option>
+          <option value="southeastasia">Southeast Asia</option>
+          <option value="israelcentral">Israel Central</option>
+        </select>
       </div>
-      <div class="api-note" id="apiNote" style="margin-top:8px;">
-        🔒 נשמר רק בדפדפן שלך, לא עוזב את המכשיר.<br>
-        📌 צור מפתח ב: <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>
-        <span id="apiKeyFormatNote" style="display:none;"><br>ℹ️ פורמט: <strong>KEY|REGION</strong> (לדוגמה: abc123...|eastus)</span>
+
+      <div id="keyInputSection" style="margin-top:20px">
+        <label id="apiLabel" class="input-label">🔑 ElevenLabs API Key</label>
+        <input type="password" id="apiInput" placeholder="הדביקו מפתח כאן...">
+        <a id="apiLink" href="https://elevenlabs.io/app/settings/api-keys" target="_blank" style="font-size:11px; color:var(--primary); text-decoration:none; margin-top:5px; display:inline-block">איפה מוצאים את המפתח?</a>
       </div>
-    </div>
 
-    <button class="btn-main" id="startBtn" onclick="startApp()">התחל</button>
-  </div>
-</div>
-
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="brand">
-    <div class="brand-mark">✍️</div>
-    <span class="brand-name">כתיבה קולית</span>
-  </div>
-  <input class="doc-name" id="docName" type="text" value="מסמך חדש" />
-  <div class="topbar-btns">
-    <button class="icon-btn" onclick="copyAll()" title="העתק">📋</button>
-    <button class="icon-btn" onclick="download()" title="הורד">💾</button>
-    <button class="icon-btn" onclick="clearAll()" title="נקה">🗑️</button>
-    <button class="icon-btn" onclick="openOverlay()" title="הגדרות">⚙️</button>
-  </div>
-</div>
-
-<!-- LAYOUT -->
-<div class="layout">
-  <div class="doc-wrap">
-    <div class="doc-paper">
-      <div class="listen-banner" id="listenBanner">
-        <div class="pulse"></div>
-        <span>מאזין…</span>
-        <span class="interim-span" id="interimSpan"></span>
-      </div>
-      <div class="editor" id="editor" contenteditable="true" spellcheck="false" dir="rtl"
-           data-placeholder="לחץ על המיקרופון והתחל לדבר…"></div>
+      <button class="btn btn-primary" style="margin-top:24px" onclick="saveAndStart()">יאללה, בואו נתחיל</button>
     </div>
   </div>
 
-  <div class="sidebar">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="logo"><span>🎙️</span> STT Pro</div>
+      <button onclick="toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:18px;">🌗</button>
+    </div>
 
-    <!-- Mic card -->
-    <div class="card">
-      <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;">
-        <span>🎙️ מיקרופון</span>
-        <span class="engine-badge" id="engineBadge" onclick="openOverlay()">ElevenLabs</span>
-      </div>
-      <div class="card-body">
-        <div class="mic-wrap">
-          <button class="mic-btn" id="micBtn" onclick="toggleRec()">🎙️</button>
-          <div class="wave" id="wave">
-            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
-            <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
-            <div class="wave-bar"></div>
-          </div>
-          <div class="mic-label" id="micLabel">לחץ להתחיל הכתבה</div>
-          <small style="font-size:10px;color:var(--ink-3);">Space = התחל/עצור</small>
+    <div class="sidebar-section">
+      <div class="section-title">⚙️ הגדרות מנוע</div>
+      <div class="card" style="cursor:pointer" onclick="document.getElementById('setupOverlay').style.display='flex'">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <span id="engineBadge" class="badge">ElevenLabs</span>
+          <span style="font-size:12px; color:var(--ink-light)">שינוי מנוע ✎</span>
         </div>
+      </div>
+
+      <div class="card" id="apiKeyCard">
+        <div class="card-title" id="apiKeyCardHead">🔑 API Key</div>
+        <div style="display:flex; gap:8px; align-items:center">
+          <code id="keyPreview" style="font-size:12px; flex:1; background:var(--accent); padding:4px 8px; border-radius:4px; overflow:hidden; text-overflow:ellipsis">••••••••</code>
+          <button onclick="toggleEye()" style="background:none; border:none; cursor:pointer; padding:4px">👁️</button>
+        </div>
+      </div>
+
+      <!-- Sidebar Model Size Selector (only for Local) -->
+      <div class="card" id="localModelCard" style="display:none">
+        <div class="card-title">🧠 גודל מודל Whisper</div>
+        <select id="localModelSizeSidebar" onchange="setLocalModelSize(this.value)" style="font-size:12px; padding:6px;">
+          <option value="tiny">Tiny (40MB)</option>
+          <option value="small">Small (244MB)</option>
+          <option value="medium">Medium (769MB)</option>
+        </select>
+        <div id="localModelNote" style="font-size:10px; color:var(--ink-light); margin-top:6px; line-height:1.3;"></div>
       </div>
     </div>
 
-    <!-- File upload card -->
-    <div class="card" id="uploadCard">
-      <div class="card-head">📁 תמלול קובץ</div>
-      <div class="card-body">
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"
-             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-          <div class="upload-icon">🎵</div>
-          <strong style="font-size:13px;">לחץ או גרור קובץ</strong>
-          <p>MP3, WAV, M4A, OGG, OPUS, FLAC, WEBM, MP4</p>
+    <div class="sidebar-section" id="uploadCard">
+      <div class="section-title">📁 העלאת קבצים</div>
+      <div id="modelInfo" style="font-size:12px; margin-bottom:12px; padding:8px; background:rgba(59,130,246,0.05); border-radius:8px; border:1px solid rgba(59,130,246,0.1)">
+        מודל: <strong>scribe_v2</strong><br>תומך ב-mp3, wav, m4a
+      </div>
+      <button class="btn" style="background:var(--accent); color:var(--ink)" onclick="document.getElementById('fileIn').click()">
+        <span>📤</span> העלאת קובץ שמע
+      </button>
+      <input type="file" id="fileIn" hidden accept="audio/*">
+    </div>
+
+    <div class="sidebar-section" style="margin-top:auto; border-top:1px solid var(--border)">
+      <div class="stats">
+        <div class="stat-item">מילים: <b id="wordCount">0</b></div>
+        <div class="stat-item">זמן: <b id="timer">00:00</b></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="toolbar">
+      <div style="display:flex; align-items:center; gap:12px">
+        <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div class="status-bar">
+          <div id="statusDot" class="dot"></div>
+          <span id="statusText">מוכן</span>
         </div>
-        <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.opus,.flac,.webm,.mp4,.mpeg,.mpga"
-               style="display:none" onchange="onFileSelect(event)" />
-        <div class="upload-progress" id="uploadProgress">
-          <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
-          <div class="upload-status" id="uploadStatus">מעבד…</div>
+      </div>
+
+      <div id="audioVisualizer">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+
+      <div style="display:flex; gap:12px">
+        <button class="btn btn-primary" id="recordBtn" style="width:140px; height:40px">
+          <span id="recordIcon">🎤</span> <span id="recordText">הקלטה</span>
+        </button>
+        <button class="btn" onclick="copyText()" style="width:40px; height:40px; background:var(--card); border:1px solid var(--border)">📋</button>
+        <button class="btn" onclick="downloadText()" style="width:40px; height:40px; background:var(--card); border:1px solid var(--border)">💾</button>
+        <button class="btn" onclick="clearText()" style="width:40px; height:40px; background:var(--card); border:1px solid var(--border); color:var(--danger)">🗑️</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div id="transcript" contenteditable="true"></div>
+      <div id="uploadProgress" style="display:none; width:100%; max-width:800px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:12px; font-weight:700">
+          <span id="progressLabel">מעבד קובץ...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden">
+          <div id="progressBar" style="height:100%; width:0%; background:var(--primary); transition:width 0.3s"></div>
         </div>
       </div>
     </div>
+  </main>
 
-    <!-- Settings card -->
-    <div class="card">
-      <div class="card-head">⚙️ הגדרות</div>
-      <div class="card-body" style="padding:6px 14px;">
-        <div class="set-row">
-          <span class="set-label">שפה</span>
-          <select id="langSel">
-            <option value="heb" selected>עברית</option>
-            <option value="ara">ערבית</option>
-            <option value="eng">אנגלית</option>
-            <option value="rus">רוסית</option>
-            <option value="fra">צרפתית</option>
-          </select>
-        </div>
-        <div class="set-row">
-          <span class="set-label">ניקוד אוטומטי</span>
-          <button class="tog on" id="togPunct" onclick="togField('punct','togPunct')"></button>
-        </div>
-      </div>
-    </div>
+  <!-- External SDKs -->
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script type="module">
+    // Transformers.js is imported in the code where needed
+  </script>
 
-    <!-- Stats card -->
-    <div class="card">
-      <div class="card-head">📊 סטטיסטיקות</div>
-      <div class="card-body">
-        <div class="stats-grid">
-          <div class="stat-box"><div class="stat-n" id="sw">0</div><div class="stat-l">מילים</div></div>
-          <div class="stat-box"><div class="stat-n" id="sc">0</div><div class="stat-l">תווים</div></div>
-          <div class="stat-box"><div class="stat-n" id="sl">0</div><div class="stat-l">שורות</div></div>
-          <div class="stat-box"><div class="stat-n" id="sm">0</div><div class="stat-l">דק׳ הכתבה</div></div>
-        </div>
-      </div>
-    </div>
+  <script>
+    let isRecording = false;
+    let apiKey = localStorage.getItem('el_api_key') || '';
+    let selectedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
+    let localModelSize = localStorage.getItem('el_local_model_size') || 'small';
+    let azureRegion = localStorage.getItem('azure_region') || 'eastus';
+    let mediaRecorder;
+    let audioChunks = [];
+    let socket;
+    let timerInterval;
+    let seconds = 0;
+    let transcriber = null; // For local Whisper
 
-    <!-- Local model size card (shown only for local engine) -->
-    <div class="card" id="localModelCard" style="display:none;">
-      <div class="card-head">🧠 גודל מודל Whisper</div>
-      <div class="card-body" style="padding:6px 14px;">
-        <div class="set-row">
-          <span class="set-label">מודל</span>
-          <select id="localModelSizeSidebar" onchange="setLocalModelSize(this.value)" style="padding:4px 6px;border-radius:6px;border:1px solid var(--border,#ddd);font-size:12px;background:var(--card,#fff);color:var(--ink,#111);direction:rtl;">
-            <option value="tiny">Tiny (~40MB)</option>
-            <option value="small" selected>Small (~244MB) ✅</option>
-            <option value="medium">Medium (~769MB) ⚠️</option>
-          </select>
-        </div>
-        <p style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5;" id="localModelNote">מודל Small: איזון טוב בין מהירות ודיוק.</p>
-      </div>
-    </div>
+    const localModelNotes = {
+      tiny: 'מהיר מאוד, זיכרון נמוך. מתאים לטקסט פשוט.',
+      small: 'הבחירה המאוזנת. דיוק טוב ומהירות סבירה.',
+      medium: 'דיוק גבוה מאוד. דורש הרבה זיכרון ועלול להיות איטי.'
+    };
 
-    <!-- API key mini (engines with API key) -->
-    <div class="card" id="apiKeyCard">
-      <div class="card-head" id="apiKeyCardHead">🔑 ElevenLabs API Key</div>
-      <div class="card-body">
-        <div class="api-mini">
-          <span class="api-mini-key" id="keyPreview">—</span>
-          <button class="api-mini-change" onclick="openOverlay()">החלף</button>
-        </div>
-        <p id="modelInfo" style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
-          מודל: <strong>scribe_v2_realtime</strong><br>
-          קבצים: <strong>scribe_v2</strong>
-        </p>
-      </div>
-    </div>
+    // ── ENGINE LOGIC ─────────────────────────────────────────────────────────────
+    
+    function selectEngine(e) {
+      selectedEngine = e;
+      document.querySelectorAll('.engine-opt').forEach(opt => opt.classList.remove('active'));
+      document.getElementById('opt-' + e).classList.add('active');
+      
+      const isIvrit = e === 'ivrit';
+      const isOpenAI = e === 'openai';
+      const needsKey = (e !== 'local');
+      
+      document.getElementById('keyInputSection').style.display = needsKey ? '' : 'none';
+      
+      if (e === 'elevenlabs') {
+        document.getElementById('apiLabel').textContent = '🔑 ElevenLabs API Key';
+        document.getElementById('apiLink').href = 'https://elevenlabs.io/app/settings/api-keys';
+        document.getElementById('apiLink').textContent = 'elevenlabs.io/app/settings/api-keys';
+        document.getElementById('apiInput').placeholder = 'sk-...';
+        document.getElementById('apiInput').value = localStorage.getItem('elevenlabs_api_key') || '';
+      } else if (e === 'deepgram') {
+        document.getElementById('apiLabel').textContent = '🔑 Deepgram API Key';
+        document.getElementById('apiLink').href = 'https://console.deepgram.com/';
+        document.getElementById('apiLink').textContent = 'console.deepgram.com';
+        document.getElementById('apiInput').placeholder = 'abc123...';
+        document.getElementById('apiInput').value = localStorage.getItem('deepgram_api_key') || '';
+      } else if (isIvrit) {
+        document.getElementById('apiLabel').textContent = '🔑 HuggingFace Token';
+        document.getElementById('apiLink').href = 'https://huggingface.co/settings/tokens';
+        document.getElementById('apiLink').textContent = 'huggingface.co/settings/tokens';
+        document.getElementById('apiInput').placeholder = 'hf_...';
+        document.getElementById('apiInput').value = localStorage.getItem('ivrit_api_key') || '';
+      } else if (isOpenAI) {
+        document.getElementById('apiLabel').textContent = '🔑 OpenAI API Key';
+        document.getElementById('apiLink').href = 'https://platform.openai.com/api-keys';
+        document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
+        document.getElementById('apiInput').placeholder = 'sk-...';
+        document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
+      } else if (e === 'azure') {
+        document.getElementById('apiLabel').textContent = '🔑 Azure Speech API Key';
+        document.getElementById('apiLink').href = 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices';
+        document.getElementById('apiLink').textContent = 'portal.azure.com → Speech Services';
+        document.getElementById('apiInput').placeholder = 'מפתח API של Azure Speech...';
+        document.getElementById('apiInput').value = localStorage.getItem('azure_api_key') || '';
+      } else if (e === 'gemini') {
+        document.getElementById('apiLabel').textContent = '🔑 Google Gemini API Key';
+        document.getElementById('apiLink').href = 'https://aistudio.google.com/apikey';
+        document.getElementById('apiLink').textContent = 'aistudio.google.com/apikey';
+        document.getElementById('apiInput').placeholder = 'AIza...';
+        document.getElementById('apiInput').value = localStorage.getItem('gemini_api_key') || '';
+      }
+      
+      // Show/hide local model size section in overlay
+      document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
+      if (e === 'local') {
+        document.getElementById('localModelSizeOverlay').value = localModelSize;
+      }
 
-  </div>
-</div>
-
-<div class="mob-mic">
-  <button class="mob-mic-btn" id="mobMicBtn" onclick="toggleRec()">🎙️</button>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-// ── STATE ──────────────────────────────────────────────────────────────────
-let apiKey = '';
-let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram' | 'ivrit' | 'openai' | 'local'
-let localModelSize = localStorage.getItem('local_model_size') || 'small';
-const localModelMap = {
-  'tiny':   'Xenova/whisper-tiny',
-  'small':  'Xenova/whisper-small',
-  'medium': 'Xenova/whisper-medium'
-};
-const localModelNotes = {
-  'tiny':   'מודל Tiny: מהיר מאוד, דיוק נמוך יחסית.',
-  'small':  'מודל Small: איזון טוב בין מהירות ודיוק.',
-  'medium': '⚠️ מודל Medium: דיוק גבוה, דורש ~1.5GB RAM ועלול להיות איטי.'
-};
-let isRec = false;
-let ws = null;
-let audioCtx = null;
-let processor = null;
-let mediaStream = null;
-let recSeconds = 0;
-let timerInt = null;
-let gRecognition = null;
-let commitTimer = null;
-let lastPartial = '';
-let reconnectAttempts = 0;
-let connectedOnce = false;
-let localWhisperPipeline = null;
-const MAX_RECONNECT = 3;
-const settings = { punct: true };
-
-// ── ELEMENTS ───────────────────────────────────────────────────────────────
-const editor    = document.getElementById('editor');
-const micBtn    = document.getElementById('micBtn');
-const mobMicBtn = document.getElementById('mobMicBtn');
-const micLabel  = document.getElementById('micLabel');
-const wave      = document.getElementById('wave');
-const banner    = document.getElementById('listenBanner');
-const interim   = document.getElementById('interimSpan');
-
-// ── INIT ───────────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
-  const savedEngine = localStorage.getItem('el_engine') || 'elevenlabs';
-  selectEngine(savedEngine, true);
-  // Load API key for the saved engine (Google needs no key)
-  const keyMap = { elevenlabs: 'el_api_key', deepgram: 'dg_api_key', ivrit: 'ivrit_api_key', openai: 'openai_api_key', azure: 'azure_api_key', gemini: 'gemini_api_key' };
-  const storageKey = keyMap[savedEngine];
-  if (storageKey) {
-    const savedKey = localStorage.getItem(storageKey);
-    if (savedKey) { apiKey = savedKey; document.getElementById('apiInput').value = savedKey; }
-  }
-  loadText();
-  editor.addEventListener('input', () => { updateStats(); saveText(); });
-  // Auto-open overlay on first visit
-  if (!localStorage.getItem('el_started')) { openOverlay(); }
-  else { document.getElementById('overlay').classList.add('hidden'); updateUI(); }
-});
-
-// ── OVERLAY ────────────────────────────────────────────────────────────────
-function openOverlay() {
-  if (isRec) stopRec();
-  document.getElementById('overlay').classList.remove('hidden');
-}
-
-function selectEngine(e, silent) {
-  engine = e;
-  document.getElementById('opt-elevenlabs').classList.toggle('selected', e === 'elevenlabs');
-  document.getElementById('opt-google').classList.toggle('selected', e === 'google');
-  document.getElementById('opt-deepgram').classList.toggle('selected', e === 'deepgram');
-  document.getElementById('opt-ivrit').classList.toggle('selected', e === 'ivrit');
-  document.getElementById('opt-openai').classList.toggle('selected', e === 'openai');
-  document.getElementById('opt-local').classList.toggle('selected', e === 'local');
-  document.getElementById('opt-azure').classList.toggle('selected', e === 'azure');
-  document.getElementById('opt-gemini').classList.toggle('selected', e === 'gemini');
-  const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai' || e === 'azure' || e === 'gemini');
-  document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
-  document.getElementById('apiKeyFormatNote').style.display = (e === 'azure') ? '' : 'none';
-  // Update API section content per engine
-  if (e === 'elevenlabs') {
-    document.getElementById('apiLabel').textContent = '🔑 API Key של ElevenLabs';
-    document.getElementById('apiLink').href = 'https://elevenlabs.io/app/settings/api-keys';
-    document.getElementById('apiLink').textContent = 'elevenlabs.io/app/settings/api-keys';
-    document.getElementById('apiInput').placeholder = 'sk_...';
-    document.getElementById('apiInput').value = localStorage.getItem('el_api_key') || '';
-  } else if (e === 'deepgram') {
-    document.getElementById('apiLabel').textContent = '🔑 API Key של Deepgram';
-    document.getElementById('apiLink').href = 'https://console.deepgram.com/settings/api-keys';
-    document.getElementById('apiLink').textContent = 'console.deepgram.com/settings/api-keys';
-    document.getElementById('apiInput').placeholder = 'מפתח API...';
-    document.getElementById('apiInput').value = localStorage.getItem('dg_api_key') || '';
-  } else if (e === 'ivrit') {
-    document.getElementById('apiLabel').textContent = '🔑 HuggingFace API Token';
-    document.getElementById('apiLink').href = 'https://huggingface.co/settings/tokens';
-    document.getElementById('apiLink').textContent = 'huggingface.co/settings/tokens';
-    document.getElementById('apiInput').placeholder = 'hf_...';
-    document.getElementById('apiInput').value = localStorage.getItem('ivrit_api_key') || '';
-  } else if (e === 'openai') {
-    document.getElementById('apiLabel').textContent = '🔑 OpenAI API Key';
-    document.getElementById('apiLink').href = 'https://platform.openai.com/api-keys';
-    document.getElementById('apiLink').textContent = 'platform.openai.com/api-keys';
-    document.getElementById('apiInput').placeholder = 'sk-...';
-    document.getElementById('apiInput').value = localStorage.getItem('openai_api_key') || '';
-  } else if (e === 'azure') {
-    document.getElementById('apiLabel').textContent = '🔑 Azure Speech API Key';
-    document.getElementById('apiLink').href = 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices';
-    document.getElementById('apiLink').textContent = 'portal.azure.com — צור משאב Speech';
-    document.getElementById('apiInput').placeholder = 'abc123...|eastus';
-    document.getElementById('apiInput').value = localStorage.getItem('azure_api_key') || '';
-  } else if (e === 'gemini') {
-    document.getElementById('apiLabel').textContent = '🔑 Gemini API Key';
-    document.getElementById('apiLink').href = 'https://aistudio.google.com/app/apikey';
-    document.getElementById('apiLink').textContent = 'aistudio.google.com/app/apikey';
-    document.getElementById('apiInput').placeholder = 'AIza...';
-    document.getElementById('apiInput').value = localStorage.getItem('gemini_api_key') || '';
-  }
-  if (!silent) localStorage.setItem('el_engine', e);
-  // Show/hide local model size section in overlay
-  document.getElementById('localModelSection').style.display = (e === 'local') ? '' : 'none';
-  if (e === 'local') {
-    document.getElementById('localModelSizeOverlay').value = localModelSize;
-  }
-}
-
-function setLocalModelSize(size) {
-  if (size !== localModelSize) {
-    localModelSize = size;
-    localStorage.setItem('local_model_size', size);
-    localWhisperPipeline = null; // reset so the new model is loaded next time
-  }
-  // Sync both selectors
-  document.getElementById('localModelSizeOverlay').value = size;
-  document.getElementById('localModelSizeSidebar').value = size;
-  // Update sidebar note
-  const noteEl = document.getElementById('localModelNote');
-  if (noteEl) noteEl.textContent = localModelNotes[size] || '';
-}
-
-function startApp() {
-  if (engine === 'elevenlabs' || engine === 'deepgram' || engine === 'ivrit' || engine === 'openai' || engine === 'azure' || engine === 'gemini') {
-    const v = document.getElementById('apiInput').value.trim();
-    if (!v || v.length < 10) { showToast('מפתח API לא תקין', 'err'); return; }
-    apiKey = v;
-    if (engine === 'elevenlabs') localStorage.setItem('el_api_key', v);
-    else if (engine === 'deepgram') localStorage.setItem('dg_api_key', v);
-    else if (engine === 'ivrit') localStorage.setItem('ivrit_api_key', v);
-    else if (engine === 'openai') localStorage.setItem('openai_api_key', v);
-    else if (engine === 'azure') localStorage.setItem('azure_api_key', v);
-    else if (engine === 'gemini') localStorage.setItem('gemini_api_key', v);
-  }
-  localStorage.setItem('el_engine', engine);
-  localStorage.setItem('el_started', '1');
-  document.getElementById('overlay').classList.add('hidden');
-  updateUI();
-}
-
-function updateUI() {
-  const isEL = engine === 'elevenlabs';
-  const isDG = engine === 'deepgram';
-  const isIvrit = engine === 'ivrit';
-  const isOpenAI = engine === 'openai';
-  const isLocal = engine === 'local';
-  const isAzure = engine === 'azure';
-  const isGemini = engine === 'gemini';
-  const needsKey = isEL || isDG || isIvrit || isOpenAI || isAzure || isGemini;
-  const fileOnly = isIvrit || isOpenAI || isLocal || isAzure || isGemini;
-  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי', azure: 'Azure', gemini: 'Gemini AI' };
-  document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
-  document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
-  document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
-  document.getElementById('localModelCard').style.display = isLocal ? '' : 'none';
-  if (isLocal) {
-    document.getElementById('localModelSizeSidebar').value = localModelSize;
-    const noteEl = document.getElementById('localModelNote');
-    if (noteEl) noteEl.textContent = localModelNotes[localModelSize] || '';
-  }
-  if (isEL) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
-    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>קבצים: <strong>scribe_v2</strong>';
-  } else if (isDG) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 Deepgram API Key';
-    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>nova-3</strong><br>שידור חי + קבצים';
-  } else if (isIvrit) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 HuggingFace Token';
-    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-large-v3-turbo-d4</strong><br>קבצים בלבד · עברית בלבד';
-  } else if (isOpenAI) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
-    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
-  } else if (isAzure) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 Azure API Key';
-    document.getElementById('modelInfo').innerHTML = 'מנוע: <strong>Fast Transcription</strong><br>קבצים בלבד · עד 4 שעות';
-  } else if (isGemini) {
-    document.getElementById('apiKeyCardHead').textContent = '🔑 Gemini API Key';
-    document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-1.5-flash</strong><br>קבצים בלבד · תמלול AI';
-  }
-  if (fileOnly) {
-    micLabel.textContent = '🗂️ מנוע זה תומך בהעלאת קובץ בלבד';
-  }
-  updateKeyPreview();
-}
-
-function updateKeyPreview() {
-  const el = document.getElementById('keyPreview');
-  el.textContent = apiKey ? apiKey.slice(0,8)+'••••'+apiKey.slice(-4) : '—';
-}
-
-function toggleEye() {
-  const inp = document.getElementById('apiInput');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
-// ── SETTINGS ───────────────────────────────────────────────────────────────
-function togField(field, btnId) {
-  settings[field] = !settings[field];
-  document.getElementById(btnId).classList.toggle('on', settings[field]);
-}
-
-// ── MIC ────────────────────────────────────────────────────────────────────
-function toggleRec() {
-  if (engine === 'ivrit' || engine === 'openai' || engine === 'local' || engine === 'azure' || engine === 'gemini') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
-  if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
-  isRec ? stopRec() : startRec();
-}
-
-function startRec() {
-  if (engine === 'google') startGoogle();
-  else if (engine === 'deepgram') startDeepgram();
-  else startElevenLabs();
-}
-
-// ── GOOGLE STT ─────────────────────────────────────────────────────────────
-function startGoogle() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('❌ Google STT דורש Chrome', 'err'); return; }
-  const langMap = {heb:'he-IL',ara:'ar-IL',eng:'en-US',rus:'ru-RU',fra:'fr-FR'};
-  const lang = langMap[document.getElementById('langSel').value] || 'he-IL';
-  gRecognition = new SR();
-  gRecognition.lang = lang;
-  gRecognition.continuous = true;
-  gRecognition.interimResults = true;
-  gRecognition.onstart = () => {
-    isRec = true; setRecUI(true);
-    timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
-  };
-  gRecognition.onresult = (event) => {
-    let fin = '', intm = '';
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const t = event.results[i][0].transcript;
-      if (event.results[i].isFinal) fin += t + ' ';
-      else intm = t;
-    }
-    if (fin) { interim.textContent = ''; insertText(fin); saveText(); }
-    else if (intm) interim.textContent = intm;
-  };
-  gRecognition.onend = () => { if (isRec) gRecognition.start(); };
-  gRecognition.onerror = (e) => {
-    if (e.error === 'not-allowed') { showToast('❌ גישה למיקרופון נדחתה', 'err'); stopRec(); }
-  };
-  gRecognition.start();
-}
-
-// ── ELEVENLABS STT ─────────────────────────────────────────────────────────
-async function startElevenLabs() {
-  reconnectAttempts = 0; connectedOnce = false;
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: {echoCancellation:true, noiseSuppression:true, sampleRate:16000}
-    });
-  } catch(e) { showToast('❌ גישה למיקרופון נדחתה', 'err'); return; }
-  isRec = true; setRecUI(true);
-  timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
-  connectWS();
-}
-
-async function getToken() {
-  const r = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
-    method:'POST', headers:{'xi-api-key':apiKey,'Content-Type':'application/json'}
-  });
-  if (!r.ok) {
-    const s = r.status;
-    if (s === 401 || s === 403) throw new Error('auth');
-    throw new Error('token_fetch_failed: ' + s);
-  }
-  const d = await r.json();
-  return d.token || d.value || d.id || Object.values(d)[0];
-}
-
-async function connectWS() {
-  if (!isRec) return;
-  let token;
-  try {
-    showToast('⏳ מתחבר…');
-    token = await getToken();
-  } catch(e) {
-    if (e.message === 'auth') { showToast('❌ מפתח API שגוי', 'err', 5000); stopRec(); openOverlay(); }
-    else showToast('❌ ' + e.message, 'err', 5000);
-    if (!connectedOnce) stopRec();
-    return;
-  }
-  const lang = document.getElementById('langSel').value;
-  const params = new URLSearchParams({
-    model_id: 'scribe_v2_realtime',
-    language_code: lang,
-    punctuate: settings.punct ? 'true' : 'false',
-    token
-  });
-  ws = new WebSocket(`wss://api.elevenlabs.io/v1/speech-to-text/realtime?${params}`);
-  ws.binaryType = 'arraybuffer';
-  ws.onopen = () => { connectedOnce = true; reconnectAttempts = 0; startAudioPipeline(); showToast('🎙️ מחובר', 'ok', 1200); };
-  ws.onmessage = handleWsMsg;
-  ws.onerror = (e) => console.error('WS error:', e);
-  ws.onclose = handleWsClose;
-}
-
-// ── PARTIAL COMMIT LOGIC ───────────────────────────────────────────────────
-function scheduleCommit(text) {
-  clearTimeout(commitTimer);
-  lastPartial = text;
-  commitTimer = setTimeout(() => {
-    if (lastPartial && lastPartial.trim()) {
-      interim.textContent = '';
-      insertText(lastPartial + ' ');
-      saveText();
-      lastPartial = '';
-    }
-  }, 1200);
-}
-
-function flushPending() {
-  clearTimeout(commitTimer);
-  if (lastPartial && lastPartial.trim()) {
-    interim.textContent = '';
-    insertText(lastPartial + ' ');
-    saveText();
-    lastPartial = '';
-  }
-}
-
-function handleWsMsg(e) {
-  try {
-    const msg = JSON.parse(e.data);
-    if (msg.message_type === 'partial_transcript' && msg.text) {
-      interim.textContent = msg.text;
-      scheduleCommit(msg.text);
-    } else if ((msg.message_type === 'committed_transcript' || msg.message_type === 'committed_transcript_with_timestamps') && msg.text) {
-      clearTimeout(commitTimer); lastPartial = '';
-      interim.textContent = '';
-      insertText(msg.text + ' ');
-      saveText();
-    } else if (msg.message_type === 'error') {
-      console.error('EL error:', msg);
-      if (msg.code === 'authentication_error' || msg.code === 'invalid_api_key') {
-        showToast('❌ מפתח API שגוי', 'err'); stopRec(); openOverlay();
+      // Show/hide Azure region section in overlay
+      document.getElementById('azureRegionSection').style.display = (e === 'azure') ? '' : 'none';
+      if (e === 'azure') {
+        document.getElementById('azureRegionSelect').value = azureRegion;
       }
     }
-  } catch(err) { console.error('Parse error:', err); }
-}
 
-function handleWsClose(e) {
-  if (!isRec) return;
-  const authCodes = [1008,4001,4003,4004];
-  if (authCodes.includes(e.code)) { showToast('❌ מפתח API לא תקין ('+e.code+')', 'err', 5000); stopRec(); openOverlay(); return; }
-  if (e.code === 1000 || e.code === 1001) { if(isRec) stopRec(); return; }
-  if (!connectedOnce) { showToast('❌ לא הצליח להתחבר ('+e.code+')', 'err', 6000); stopRec(); openOverlay(); return; }
-  if (reconnectAttempts < MAX_RECONNECT) {
-    reconnectAttempts++;
-    showToast('🔄 מתחבר מחדש ('+reconnectAttempts+'/'+MAX_RECONNECT+')…');
-    if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
-    setTimeout(() => { if (isRec) connectWS(); }, 1500);
-  } else { showToast('❌ החיבור נפסק', 'err', 5000); stopRec(); }
-}
+    function setLocalModelSize(size) {
+      localModelSize = size;
+      localStorage.setItem('el_local_model_size', size);
+      updateUI();
+    }
 
-// ── AUDIO PIPELINE ─────────────────────────────────────────────────────────
-function startAudioPipeline() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:16000});
-  const source = audioCtx.createMediaStreamSource(mediaStream);
-  processor = audioCtx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (e) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    const f32 = e.inputBuffer.getChannelData(0);
-    const i16 = new Int16Array(f32.length);
-    for (let i=0;i<f32.length;i++) { const s=Math.max(-1,Math.min(1,f32[i])); i16[i]=s<0?s*0x8000:s*0x7FFF; }
-    const bytes = new Uint8Array(i16.buffer);
-    let bin = ''; for (let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
-    ws.send(JSON.stringify({message_type:'input_audio_chunk', audio_base_64:btoa(bin), sample_rate:16000}));
-  };
-  source.connect(processor);
-  processor.connect(audioCtx.destination);
-}
+    function setAzureRegion(region) {
+      azureRegion = region;
+      localStorage.setItem('azure_region', region);
+      updateUI();
+    }
 
-// ── DEEPGRAM STT ───────────────────────────────────────────────────────────
-const dgLangMap = {heb:'he', ara:'ar', eng:'en', rus:'ru', fra:'fr'};
+    function saveAndStart() {
+      const keyVal = document.getElementById('apiInput').value.trim();
+      if (selectedEngine !== 'local' && !keyVal) {
+        alert('נא להזין מפתח API כדי להמשיך');
+        return;
+      }
+      
+      apiKey = keyVal;
+      if (selectedEngine === 'elevenlabs') localStorage.setItem('elevenlabs_api_key', apiKey);
+      if (selectedEngine === 'deepgram') localStorage.setItem('deepgram_api_key', apiKey);
+      if (selectedEngine === 'ivrit') localStorage.setItem('ivrit_api_key', apiKey);
+      if (selectedEngine === 'openai') localStorage.setItem('openai_api_key', apiKey);
+      if (selectedEngine === 'azure') localStorage.setItem('azure_api_key', apiKey);
+      if (selectedEngine === 'gemini') localStorage.setItem('gemini_api_key', apiKey);
+      
+      localStorage.setItem('el_engine', selectedEngine);
+      document.getElementById('setupOverlay').style.display = 'none';
+      updateUI();
+    }
 
-async function startDeepgram() {
-  reconnectAttempts = 0; connectedOnce = false;
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio: {echoCancellation:true, noiseSuppression:true, sampleRate:16000}
-    });
-  } catch(e) { showToast('❌ גישה למיקרופון נדחתה', 'err'); return; }
-  isRec = true; setRecUI(true);
-  timerInt = setInterval(() => { recSeconds++; document.getElementById('sm').textContent = Math.floor(recSeconds/60); }, 1000);
-  connectDgWS();
-}
+    function updateUI() {
+      const isEL = selectedEngine === 'elevenlabs';
+      const isDG = selectedEngine === 'deepgram';
+      const isIvrit = selectedEngine === 'ivrit';
+      const isOpenAI = selectedEngine === 'openai';
+      const isLocal = selectedEngine === 'local';
+      const isAzure = selectedEngine === 'azure';
+      const isGemini = selectedEngine === 'gemini';
+      
+      const needsKey = isEL || isDG || isIvrit || isOpenAI || isAzure || isGemini;
+      const fileOnly = isIvrit || isOpenAI || isLocal || isAzure || isGemini;
+      
+      const badgeNames = { 
+        elevenlabs: 'ElevenLabs', 
+        deepgram: 'Deepgram', 
+        google: 'Google', 
+        ivrit: 'ivrit.ai', 
+        openai: 'OpenAI', 
+        local: 'Whisper מקומי', 
+        azure: 'Azure', 
+        gemini: 'Gemini' 
+      };
+      
+      document.getElementById('engineBadge').textContent = badgeNames[selectedEngine] || selectedEngine;
+      document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
+      document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
+      
+      document.getElementById('localModelCard').style.display = isLocal ? '' : 'none';
+      if (isLocal) {
+        document.getElementById('localModelSizeSidebar').value = localModelSize;
+        const noteEl = document.getElementById('localModelNote');
+        if (noteEl) noteEl.textContent = localModelNotes[localModelSize] || '';
+      }
 
-function connectDgWS() {
-  if (!isRec) return;
-  const lang = dgLangMap[document.getElementById('langSel').value] || 'he';
-  const params = new URLSearchParams({
-    model: 'nova-3',
-    language: lang,
-    punctuate: settings.punct ? 'true' : 'false',
-    encoding: 'linear16',
-    channels: '1',
-    sample_rate: '16000',
-    interim_results: 'true',
-    utterance_end_ms: '1200',
-    token: apiKey
-  });
-  showToast('⏳ מתחבר…');
-  ws = new WebSocket(`wss://api.deepgram.com/v1/listen?${params}`);
-  ws.binaryType = 'arraybuffer';
-  ws.onopen = () => { connectedOnce = true; reconnectAttempts = 0; startDgAudioPipeline(); showToast('🎙️ מחובר', 'ok', 1200); };
-  ws.onmessage = handleDgMsg;
-  ws.onerror = (e) => console.error('DG WS error:', e);
-  ws.onclose = handleDgWsClose;
-}
+      const micLabel = document.getElementById('recordText');
+      const micBtn = document.getElementById('recordBtn');
+      
+      if (isEL) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>שידור חי + קבצים';
+      } else if (isDG) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 Deepgram API Key';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>nova-3</strong><br>שידור חי + קבצים';
+      } else if (isIvrit) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 HuggingFace Token';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-large-v3-turbo-d4</strong><br>קבצים בלבד · עברית בלבד';
+      } else if (isOpenAI) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 OpenAI API Key';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>whisper-1</strong><br>קבצים בלבד · רב-שפתי';
+      } else if (isAzure) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 Azure Speech API Key';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>Azure Speech-to-Text</strong><br>אזור: <strong>' + azureRegion + '</strong> · קבצים בלבד';
+      } else if (isGemini) {
+        document.getElementById('apiKeyCardHead').textContent = '🔑 Google Gemini API Key';
+        document.getElementById('modelInfo').innerHTML = 'מודל: <strong>gemini-2.0-flash</strong><br>תמלול LLM · קבצים בלבד';
+      }
 
-function startDgAudioPipeline() {
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:16000});
-  const source = audioCtx.createMediaStreamSource(mediaStream);
-  processor = audioCtx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (e) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    const f32 = e.inputBuffer.getChannelData(0);
-    const i16 = new Int16Array(f32.length);
-    for (let i=0;i<f32.length;i++) { const s=Math.max(-1,Math.min(1,f32[i])); i16[i]=s<0?s*0x8000:s*0x7FFF; }
-    ws.send(i16.buffer);
-  };
-  source.connect(processor);
-  processor.connect(audioCtx.destination);
-}
-
-function handleDgMsg(e) {
-  try {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'Results') {
-      const transcript = msg.channel?.alternatives?.[0]?.transcript || '';
-      if (!transcript) return;
-      if (msg.is_final) {
-        clearTimeout(commitTimer); lastPartial = '';
-        interim.textContent = '';
-        insertText(transcript + ' ');
-        saveText();
+      if (fileOnly) {
+        micLabel.textContent = 'שידור חי לא נתמך';
+        micBtn.disabled = true;
+        micBtn.style.opacity = '0.5';
       } else {
-        interim.textContent = transcript;
-        scheduleCommit(transcript);
+        micLabel.textContent = isRecording ? 'עצור הקלטה' : 'התחל הקלטה';
+        micBtn.disabled = false;
+        micBtn.style.opacity = '1';
       }
-    } else if (msg.type === 'Error') {
-      console.error('DG error:', msg);
-      showToast('❌ שגיאת Deepgram: ' + (msg.message || ''), 'err');
+      
+      updateKeyPreview();
     }
-  } catch(err) { console.error('DG parse error:', err); }
-}
 
-function handleDgWsClose(e) {
-  if (!isRec) return;
-  // 1008=policy violation, 4001/4003=auth errors
-  if (e.code === 1008 || e.code === 4001 || e.code === 4003) {
-    showToast('❌ מפתח API לא תקין (' + e.code + ')', 'err', 5000);
-    stopRec(); openOverlay(); return;
-  }
-  if (e.code === 1000 || e.code === 1001) { if (isRec) stopRec(); return; }
-  // For 1006 (abnormal closure) and other transient errors, attempt reconnect
-  if (reconnectAttempts < MAX_RECONNECT) {
-    reconnectAttempts++;
-    showToast('🔄 מתחבר מחדש (' + reconnectAttempts + '/' + MAX_RECONNECT + ')…');
-    if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; processor = null; }
-    setTimeout(() => { if (isRec) connectDgWS(); }, 1500);
-  } else { showToast('❌ לא הצליח להתחבר (' + e.code + ')', 'err', 6000); stopRec(); }
-}
+    function updateKeyPreview() {
+      const el = document.getElementById('keyPreview');
+      const currentKey = localStorage.getItem(selectedEngine + '_api_key') || apiKey;
+      el.textContent = currentKey ? currentKey.slice(0,8)+'••••'+currentKey.slice(-4) : '—';
+    }
 
-// ── STOP ───────────────────────────────────────────────────────────────────
-function stopRec() {
-  isRec = false;
-  flushPending();
-  if (gRecognition) { try{gRecognition.stop();}catch(e){} gRecognition = null; }
-  if (processor) { processor.disconnect(); processor = null; }
-  if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx = null; }
-  if (mediaStream) { mediaStream.getTracks().forEach(t=>t.stop()); mediaStream = null; }
-  if (ws && ws.readyState <= 1) { ws.close(); ws = null; }
-  setRecUI(false);
-  clearInterval(timerInt);
-  interim.textContent = '';
-}
-
-function setRecUI(on) {
-  micBtn.classList.toggle('on', on);
-  mobMicBtn.classList.toggle('on', on);
-  micBtn.innerHTML    = on ? '⏹' : '🎙️';
-  mobMicBtn.innerHTML = on ? '⏹' : '🎙️';
-  micLabel.textContent = on ? 'מקשיב — לחץ לעצירה' : 'לחץ להתחיל הכתבה';
-  micLabel.classList.toggle('on', on);
-  wave.classList.toggle('on', on);
-  banner.classList.toggle('active', on);
-}
-
-// ── FILE UPLOAD (ElevenLabs / Deepgram batch) ──────────────────────────────
-function onDragOver(e) { e.preventDefault(); document.getElementById('uploadArea').classList.add('drag'); }
-function onDragLeave(e) { document.getElementById('uploadArea').classList.remove('drag'); }
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('uploadArea').classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) uploadFile(file);
-}
-function onFileSelect(e) { const f = e.target.files[0]; if(f) uploadFile(f); e.target.value=''; }
-
-async function uploadFile(file) {
-  if (!apiKey && engine !== 'local') { openOverlay(); return; }
-  const MAX_MB = 200;
-  if (file.size > MAX_MB * 1024 * 1024) { showToast(`❌ קובץ גדול מדי (מקסימום ${MAX_MB}MB)`, 'err'); return; }
-
-  const prog = document.getElementById('uploadProgress');
-  const bar  = document.getElementById('progressBar');
-  const stat = document.getElementById('uploadStatus');
-  prog.classList.add('show');
-  bar.style.width = '10%';
-  stat.textContent = `מעלה: ${file.name} (${(file.size/1024/1024).toFixed(1)}MB)…`;
-
-  try {
-    bar.style.width = '40%';
-
-    let text = '';
-    if (engine === 'deepgram') {
-      stat.textContent = 'שולח ל-Deepgram…';
-      const lang = dgLangMap[document.getElementById('langSel').value] || 'he';
-      const params = new URLSearchParams({
-        model: 'nova-3', language: lang,
-        punctuate: settings.punct ? 'true' : 'false'
-      });
-      const res = await fetch(`https://api.deepgram.com/v1/listen?${params}`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Token ' + apiKey, 'Content-Type': file.type || 'application/octet-stream' },
-        body: file
-      });
-      bar.style.width = '80%';
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.err_msg || err.message || `HTTP ${res.status}`);
+    function toggleEye() {
+      const el = document.getElementById('keyPreview');
+      const currentKey = localStorage.getItem(selectedEngine + '_api_key') || apiKey;
+      if (el.textContent.includes('••••')) {
+        el.textContent = currentKey;
+      } else {
+        updateKeyPreview();
       }
-      const data = await res.json();
-      text = data.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
-    } else if (engine === 'ivrit') {
-      stat.textContent = 'שולח ל-ivrit.ai (HuggingFace)…';
-      const res = await fetch('https://api-inference.huggingface.co/models/ivrit-ai/whisper-large-v3-turbo-d4', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': file.type || 'audio/wav' },
-        body: file
-      });
-      bar.style.width = '80%';
-      if (res.status === 503) {
-        const errData = await res.json().catch(()=>({}));
-        const wait = Math.ceil(errData.estimated_time || 20);
-        throw new Error(`המודל טוען (${wait} שניות). נסה שוב עוד רגע.`);
+    }
+
+    // ── CORE FUNCTIONS ───────────────────────────────────────────────────────────
+    
+    const recordBtn = document.getElementById('recordBtn');
+    const transcript = document.getElementById('transcript');
+    
+    recordBtn.onclick = () => {
+      if (isRecording) stopRecording();
+      else startRecording();
+    };
+
+    async function startRecording() {
+      if (selectedEngine === 'elevenlabs') startElevenLabs();
+      else if (selectedEngine === 'deepgram') startDeepgram();
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      if (socket) socket.close();
+      if (mediaRecorder) mediaRecorder.stop();
+      clearInterval(timerInterval);
+      updateStatus('מוכן', false);
+      recordBtn.classList.remove('btn-danger');
+      document.getElementById('recordIcon').textContent = '🎤';
+      document.getElementById('recordText').textContent = 'התחל הקלטה';
+    }
+
+    // ElevenLabs Realtime
+    async function startElevenLabs() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        socket = new WebSocket(`wss://api.elevenlabs.io/v1/scribe/realtime?model=scribe_v2_realtime&api_key=${apiKey}`);
+        
+        socket.onopen = () => {
+          isRecording = true;
+          updateStatus('מקליט (ElevenLabs)', true);
+          startTimer();
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data);
+          };
+          mediaRecorder.start(250);
+          recordBtn.classList.add('btn-danger');
+          document.getElementById('recordIcon').textContent = '⏹️';
+          document.getElementById('recordText').textContent = 'עצור הקלטה';
+        };
+
+        socket.onmessage = (evt) => {
+          const data = JSON.parse(evt.data);
+          if (data.type === 'transcript' && data.transcript) {
+            appendTranscript(data.transcript, data.is_final);
+          }
+        };
+
+        socket.onerror = (e) => { console.error(e); stopRecording(); };
+        socket.onclose = () => stopRecording();
+
+      } catch (err) { alert('שגיאה בגישה למיקרופון'); }
+    }
+
+    // Deepgram Realtime
+    async function startDeepgram() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        socket = new WebSocket('wss://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true', ['token', apiKey]);
+        
+        socket.onopen = () => {
+          isRecording = true;
+          updateStatus('מקליט (Deepgram)', true);
+          startTimer();
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0 && socket.readyState === 1) socket.send(e.data);
+          };
+          mediaRecorder.start(250);
+          recordBtn.classList.add('btn-danger');
+          document.getElementById('recordIcon').textContent = '⏹️';
+          document.getElementById('recordText').textContent = 'עצור הקלטה';
+        };
+
+        socket.onmessage = (msg) => {
+          const data = JSON.parse(msg.data);
+          const text = data.channel.alternatives[0].transcript;
+          if (text) appendTranscript(text, data.is_final);
+        };
+
+        socket.onclose = () => stopRecording();
+      } catch (err) { alert('שגיאה בחיבור ל-Deepgram'); }
+    }
+
+    // ── FILE UPLOAD ─────────────────────────────────────────────────────────────
+    
+    document.getElementById('fileIn').onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (selectedEngine === 'local') {
+        transcribeLocal(file);
+      } else if (selectedEngine === 'ivrit') {
+        transcribeIvrit(file);
+      } else if (selectedEngine === 'openai') {
+        transcribeOpenAI(file);
+      } else if (selectedEngine === 'azure') {
+        transcribeAzure(file);
+      } else if (selectedEngine === 'gemini') {
+        transcribeGemini(file);
+      } else {
+        transcribeCloud(file); // ElevenLabs / Deepgram
       }
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
+    };
+
+    async function transcribeCloud(file) {
+      showProgress(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('model', 'scribe_v2');
+
+      const url = selectedEngine === 'elevenlabs' 
+        ? 'https://api.elevenlabs.io/v1/scribe' 
+        : 'https://api.deepgram.com/v1/listen?model=nova-3&language=he&smart_format=true';
+
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'xi-api-key': apiKey, 'Authorization': `Token ${apiKey}` }, // Works for both
+          body: formData
+        });
+        const data = await resp.json();
+        const text = selectedEngine === 'elevenlabs' ? data.transcript : data.results.channels[0].alternatives[0].transcript;
+        appendTranscript(text, true);
+      } catch (err) { alert('שגיאה בהעלאת הקובץ'); }
+      showProgress(false);
+    }
+
+    async function transcribeOpenAI(file) {
+      showProgress(true, 'שולח ל-OpenAI...');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('model', 'whisper-1');
+      formData.append('language', 'he');
+
+      try {
+        const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData
+        });
+        const data = await resp.json();
+        if (data.text) appendTranscript(data.text, true);
+        else alert('שגיאה: ' + (data.error?.message || 'לא התקבל טקסט'));
+      } catch (err) { alert('שגיאה בתקשורת עם OpenAI'); }
+      showProgress(false);
+    }
+
+    async function transcribeIvrit(file) {
+      showProgress(true, 'מעלה ל-Ivrit.ai...');
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      try {
+        const resp = await fetch('https://api.ivrit.ai/api/transcribe', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          body: formData
+        });
+        const data = await resp.json();
+        // Ivrit.ai usually returns a job ID or results
+        if (data.text) appendTranscript(data.text, true);
+        else alert('התמלול בביצוע או שחלה שגיאה');
+      } catch (err) { alert('שגיאה בתקשורת עם Ivrit.ai'); }
+      showProgress(false);
+    }
+
+    async function transcribeAzure(file) {
+      showProgress(true, 'מעלה ל-Azure...');
+      try {
+        const url = `https://${azureRegion}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-05-15-preview`;
+        const formData = new FormData();
+        formData.append('audio', file);
+        formData.append('definition', JSON.stringify({
+          locales: ["he-IL"],
+          profanityFilterMode: "None"
+        }));
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Ocp-Apim-Subscription-Key': apiKey },
+          body: formData
+        });
+        
+        const data = await resp.json();
+        if (data.combinedPhrases && data.combinedPhrases[0]) {
+          appendTranscript(data.combinedPhrases[0].text, true);
+        } else {
+          alert('שגיאה בתמלול Azure');
+        }
+      } catch (err) {
+        alert('שגיאה בתקשורת עם Azure');
       }
-      const data = await res.json();
-      text = data.text || '';
-    } else if (engine === 'openai') {
-      stat.textContent = 'שולח ל-OpenAI Whisper…';
-      const form = new FormData();
-      form.append('file', file, file.name);
-      form.append('model', 'whisper-1');
-      const oaiLang = dgLangMap[document.getElementById('langSel').value];
-      if (oaiLang) form.append('language', oaiLang);
-      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + apiKey },
-        body: form
-      });
-      bar.style.width = '80%';
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      showProgress(false);
+    }
+
+    async function transcribeGemini(file) {
+      showProgress(true, 'מעבד עם Gemini...');
+      try {
+        // Step 1: Read file as Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          const base64Data = reader.result.split(',')[1];
+          const mimeType = file.type;
+
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+          
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: "אנא תמלל את קובץ השמע המצורף בצורה מדויקת מילה במילה. אל תוסיף פרשנות, רק את התמליל." },
+                  { inline_data: { mime_type: mimeType, data: base64Data } }
+                ]
+              }]
+            })
+          });
+
+          const result = await response.json();
+          if (result.candidates && result.candidates[0].content.parts[0].text) {
+            appendTranscript(result.candidates[0].content.parts[0].text, true);
+          } else {
+            console.error(result);
+            alert('שגיאה בתמלול Gemini: ' + (result.error?.message || 'לא התקבלו תוצאות'));
+          }
+          showProgress(false);
+        };
+      } catch (err) {
+        alert('שגיאה בתקשורת עם Gemini');
+        showProgress(false);
       }
-      const data = await res.json();
-      text = data.text || '';
-    } else if (engine === 'local') {
-      // ── LOCAL WHISPER (Transformers.js — runs entirely in the browser) ──
-      if (!localWhisperPipeline) {
-        const modelId = localModelMap[localModelSize] || 'Xenova/whisper-small';
-        stat.textContent = '⬇️ מוריד מודל Whisper (פעם ראשונה בלבד)…';
-        bar.style.width = '5%';
-        try {
-          const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2/dist/transformers.min.js');
-          env.allowLocalModels = false;
-          env.useBrowserCache = true;
-          localWhisperPipeline = await pipeline(
-            'automatic-speech-recognition',
-            modelId,
-            {
-              progress_callback: (p) => {
-                if (p.status === 'downloading' && typeof p.progress === 'number') {
-                  const pct = Math.round(p.progress);
-                  stat.textContent = `⬇️ מוריד מודל: ${pct}%`;
-                  bar.style.width = Math.min(pct * 0.4, 40) + '%';
-                }
+    }
+
+    async function transcribeLocal(file) {
+      showProgress(true, 'טוען מודל Whisper לדפדפן (פעם ראשונה עשויה לקחת זמן)...');
+      try {
+        const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+        
+        if (!transcriber || transcriber.model !== `Xenova/whisper-${localModelSize}`) {
+          updateStatus('טוען מודל...', true);
+          transcriber = await pipeline('automatic-speech-recognition', `Xenova/whisper-${localModelSize}`, {
+            progress_callback: (p) => {
+              if (p.status === 'progress') {
+                updateProgress(p.progress, `טוען מודל: ${Math.round(p.progress)}%`);
               }
             }
-          );
-        } catch (importErr) {
-          throw new Error('לא הצליח לטעון מודל: ' + importErr.message);
+          });
+          transcriber.model = `Xenova/whisper-${localModelSize}`;
         }
-      }
-      stat.textContent = 'מפענח אודיו…';
-      bar.style.width = '50%';
-      const arrBuf = await file.arrayBuffer();
-      const tempCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-      let audioData;
-      try {
-        const decoded = await tempCtx.decodeAudioData(arrBuf);
-        audioData = decoded.getChannelData(0);
-      } finally {
-        tempCtx.close().catch(() => {});
-      }
-      stat.textContent = 'מתמלל (עשוי לקחת כמה דקות)…';
-      bar.style.width = '65%';
-      const whisperLangMap = { heb: 'hebrew', ara: 'arabic', eng: 'english', rus: 'russian', fra: 'french' };
-      const wLang = whisperLangMap[document.getElementById('langSel').value] || 'hebrew';
-      const result = await localWhisperPipeline(audioData, {
-        language: wLang,
-        task: 'transcribe',
-        chunk_length_s: 30,
-        stride_length_s: 5,
-      });
-      text = result.text || '';
-    } else if (engine === 'azure') {
-      // ── AZURE SPEECH FAST TRANSCRIPTION ──
-      stat.textContent = 'שולח ל-Azure Speech-to-Text…';
-      const azParts = apiKey.split('|');
-      const azKey = azParts[0]?.trim();
-      const azRegion = azParts[1]?.trim();
-      if (!azKey || !azRegion) {
-        throw new Error('הכנס את המפתח בפורמט: KEY|REGION (לדוגמה: abc123...|eastus)');
-      }
-      const azLangMap = { heb: 'he-IL', ara: 'ar-AE', eng: 'en-US', rus: 'ru-RU', fra: 'fr-FR' };
-      const azLocale = azLangMap[document.getElementById('langSel').value] || 'he-IL';
-      const azForm = new FormData();
-      azForm.append('audio', file, file.name);
-      azForm.append('definition', JSON.stringify({ locales: [azLocale], profanityFilterMode: 'None' }));
-      const azRes = await fetch(
-        `https://${azRegion}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15`,
-        { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': azKey }, body: azForm }
-      );
-      bar.style.width = '80%';
-      if (!azRes.ok) {
-        const err = await azRes.json().catch(()=>({}));
-        throw new Error(err.error?.message || `HTTP ${azRes.status}`);
-      }
-      const azData = await azRes.json();
-      text = (azData.combinedPhrases || []).map(p => p.text).join('\n') ||
-             (azData.phrases || []).map(p => p.text).join(' ') || '';
-    } else if (engine === 'gemini') {
-      // ── GEMINI AI TRANSCRIPTION ──
-      stat.textContent = 'שולח ל-Gemini AI…';
-      const GEMINI_INLINE_LIMIT = 15 * 1024 * 1024; // 15MB inline limit
-      const transcriptPrompt = 'Transcribe this audio word for word, including appropriate punctuation marks and line breaks. Return only the transcription with no additional explanation.';
-      let genParts;
-      if (file.size <= GEMINI_INLINE_LIMIT) {
-        // Inline base64 for small files
-        const arrBuf = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrBuf);
-        const chunks = [];
-        const CHUNK = 8192;
-        for (let i = 0; i < bytes.length; i += CHUNK) {
-          chunks.push(String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, bytes.length))));
-        }
-        genParts = [
-          { inline_data: { mime_type: file.type || 'audio/wav', data: btoa(chunks.join('')) } },
-          { text: transcriptPrompt }
-        ];
-      } else {
-        // Files API for larger files
-        stat.textContent = 'מעלה קובץ ל-Gemini Files API…';
-        const startRes = await fetch(
-          `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: 'POST',
-            headers: {
-              'X-Goog-Upload-Protocol': 'resumable',
-              'X-Goog-Upload-Command': 'start',
-              'X-Goog-Upload-Header-Content-Length': String(file.size),
-              'X-Goog-Upload-Header-Content-Type': file.type || 'audio/wav',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ file: { display_name: file.name } })
+
+        updateStatus('מעבד...', true);
+        updateProgress(0, 'מנתח שמע...');
+        
+        const audioData = await readAudioAsFloat32(file);
+        const output = await transcriber(audioData, { 
+          language: 'hebrew', 
+          task: 'transcribe',
+          chunk_length_s: 30,
+          stride_length_s: 5,
+          callback_function: (p) => {
+            // Partial results not easily supported in simple pipeline
           }
-        );
-        if (!startRes.ok) {
-          const err = await startRes.json().catch(()=>({}));
-          throw new Error(err.error?.message || `שגיאת העלאה: HTTP ${startRes.status}`);
-        }
-        const uploadUrl = startRes.headers.get('X-Goog-Upload-URL');
-        if (!uploadUrl) throw new Error('לא התקבל URL להעלאה מ-Gemini');
-        bar.style.width = '50%';
-        stat.textContent = 'מעלה קובץ…';
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: {
-            'X-Goog-Upload-Protocol': 'resumable',
-            'X-Goog-Upload-Command': 'upload, finalize',
-            'X-Goog-Upload-Offset': '0',
-            'Content-Length': String(file.size),
-            'Content-Type': file.type || 'audio/wav'
-          },
-          body: file
         });
-        if (!uploadRes.ok) {
-          const err = await uploadRes.json().catch(()=>({}));
-          throw new Error(err.error?.message || `שגיאת העלאה: HTTP ${uploadRes.status}`);
-        }
-        const fileData = await uploadRes.json();
-        const fileUri = fileData.file?.uri;
-        if (!fileUri) throw new Error('לא התקבל URI לקובץ מ-Gemini');
-        genParts = [
-          { file_data: { mime_type: file.type || 'audio/wav', file_uri: fileUri } },
-          { text: transcriptPrompt }
-        ];
+
+        appendTranscript(output.text, true);
+        updateStatus('מוכן', false);
+      } catch (err) {
+        console.error(err);
+        alert('שגיאה בתמלול מקומי. וודאו שיש לכם מספיק זיכרון RAM.');
       }
-      bar.style.width = '75%';
-      stat.textContent = 'מתמלל עם Gemini…';
-      const genRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: genParts }],
-            generationConfig: { temperature: 0, maxOutputTokens: 8192 }
-          })
-        }
-      );
-      bar.style.width = '90%';
-      if (!genRes.ok) {
-        const err = await genRes.json().catch(()=>({}));
-        throw new Error(err.error?.message || `HTTP ${genRes.status}`);
+      showProgress(false);
+    }
+
+    async function readAudioAsFloat32(file) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      let audioData = audioBuffer.getChannelData(0);
+      return audioData;
+    }
+
+    // ── HELPERS ──────────────────────────────────────────────────────────────────
+    
+    let lastFinalText = "";
+    function appendTranscript(text, isFinal) {
+      if (isFinal) {
+        lastFinalText += text + " ";
+        transcript.textContent = lastFinalText;
+      } else {
+        transcript.textContent = lastFinalText + text;
       }
-      const genData = await genRes.json();
-      text = genData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    } else {
-      stat.textContent = 'שולח ל-ElevenLabs…';
-      const form = new FormData();
-      form.append('file', file, file.name);
-      form.append('model_id', 'scribe_v2');
-      form.append('language_code', document.getElementById('langSel').value);
-      if (settings.punct) form.append('punctuate', 'true');
-      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-        method: 'POST',
-        headers: { 'xi-api-key': apiKey },
-        body: form
+      
+      const words = transcript.textContent.trim().split(/\s+/).length;
+      document.getElementById('wordCount').textContent = transcript.textContent.trim() ? words : 0;
+      transcript.scrollTop = transcript.scrollHeight;
+    }
+
+    function updateStatus(txt, active) {
+      document.getElementById('statusText').textContent = txt;
+      document.getElementById('statusDot').className = 'dot ' + (active ? (isRecording ? 'recording' : 'active') : '');
+    }
+
+    function startTimer() {
+      seconds = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function showProgress(show, label = 'מעבד קובץ...') {
+      document.getElementById('uploadProgress').style.display = show ? 'block' : 'none';
+      document.getElementById('progressLabel').textContent = label;
+      if (!show) updateProgress(0);
+    }
+
+    function updateProgress(pct, label) {
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressPercent').textContent = Math.round(pct) + '%';
+      if (label) document.getElementById('progressLabel').textContent = label;
+    }
+
+    function copyText() {
+      navigator.clipboard.writeText(transcript.textContent);
+      const btn = event.currentTarget;
+      const old = btn.textContent;
+      btn.textContent = '✅';
+      setTimeout(() => btn.textContent = old, 2000);
+    }
+
+    function downloadText() {
+      const blob = new Blob([transcript.textContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transcription-${new Date().getTime()}.txt`;
+      a.click();
+    }
+
+    function clearText() {
+      if (confirm('למחוק את כל הטקסט?')) {
+        transcript.textContent = '';
+        lastFinalText = '';
+        document.getElementById('wordCount').textContent = '0';
+      }
+    }
+
+    function toggleTheme() {
+      const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', theme);
+      localStorage.setItem('el_theme', theme);
+    }
+
+    // Init
+    if (localStorage.getItem('el_theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    if (selectedEngine) selectEngine(selectedEngine);
+    updateUI();
+
+    // Visualizer simulation
+    setInterval(() => {
+      if (!isRecording) {
+        document.querySelectorAll('.bar').forEach(b => b.style.height = '4px');
+        return;
+      }
+      document.querySelectorAll('.bar').forEach(b => {
+        b.style.height = (Math.random() * 30 + 5) + 'px';
       });
-      bar.style.width = '80%';
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.detail?.message || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      text = data.text || data.transcript || '';
-    }
-
-    bar.style.width = '100%';
-    stat.textContent = '✅ הושלם!';
-
-    if (text) {
-      insertText('\n\n— ' + file.name + ' —\n' + text + '\n');
-      saveText();
-      showToast('✅ תמלול הקובץ הושלם', 'ok', 3000);
-    } else {
-      showToast('⚠️ לא נמצא טקסט בקובץ', 'err');
-    }
-  } catch(e) {
-    stat.textContent = '❌ שגיאה: ' + e.message;
-    showToast('❌ ' + e.message, 'err', 5000);
-  }
-
-  setTimeout(() => { prog.classList.remove('show'); bar.style.width='0%'; }, 3000);
-}
-
-// ── TEXT ───────────────────────────────────────────────────────────────────
-function insertText(text) {
-  if (!text.trim()) return;
-  editor.focus();
-  const sel = window.getSelection();
-  if (sel.rangeCount && editor.contains(sel.anchorNode)) {
-    const r = sel.getRangeAt(0);
-    r.deleteContents();
-    const n = document.createTextNode(text);
-    r.insertNode(n); r.setStartAfter(n); r.collapse(true);
-    sel.removeAllRanges(); sel.addRange(r);
-  } else {
-    const r = document.createRange();
-    r.selectNodeContents(editor); r.collapse(false);
-    sel.removeAllRanges(); sel.addRange(r);
-    document.execCommand('insertText', false, text);
-  }
-  updateStats();
-  editor.scrollTop = editor.scrollHeight;
-}
-
-function updateStats() {
-  const t = editor.innerText || '';
-  const w = t.trim() ? t.trim().split(/\s+/).length : 0;
-  document.getElementById('sw').textContent = w;
-  document.getElementById('sc').textContent = t.replace(/\s/g,'').length;
-  document.getElementById('sl').textContent = t.split('\n').filter(l=>l.trim()).length;
-}
-
-function saveText() {
-  localStorage.setItem('el_doc_text', editor.innerText||'');
-  localStorage.setItem('el_doc_name', document.getElementById('docName').value);
-}
-function loadText() {
-  const t = localStorage.getItem('el_doc_text');
-  const n = localStorage.getItem('el_doc_name');
-  if (t) { editor.innerText = t; updateStats(); }
-  if (n) document.getElementById('docName').value = n;
-}
-document.getElementById('docName').addEventListener('input', saveText);
-
-// ── ACTIONS ────────────────────────────────────────────────────────────────
-function copyAll() { navigator.clipboard.writeText(editor.innerText||'').then(()=>showToast('✅ הועתק','ok')); }
-function download() {
-  const n = document.getElementById('docName').value || 'כתיבה קולית';
-  const b = new Blob([editor.innerText||''],{type:'text/plain;charset=utf-8'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download=n+'.txt'; a.click(); URL.revokeObjectURL(a.href);
-  showToast('💾 הורד','ok');
-}
-function clearAll() {
-  if (!(editor.innerText||'').trim()) return;
-  if (confirm('למחוק את כל הטקסט?')) { editor.innerHTML=''; saveText(); updateStats(); showToast('🗑️ נמחק'); }
-}
-
-// ── TOAST ──────────────────────────────────────────────────────────────────
-function showToast(msg, type='', dur=2800) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=`toast show ${type}`;
-  clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',dur);
-}
-
-// ── KEYBOARD ───────────────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.code==='Space' && document.activeElement!==editor && !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) {
-    e.preventDefault(); toggleRec();
-  }
-});
-document.getElementById('apiInput').addEventListener('keydown', e=>{ if(e.key==='Enter') startApp(); });
-</script>
+    }, 100);
+  </script>
 </body>
 </html>
