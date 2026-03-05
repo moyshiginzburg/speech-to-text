@@ -208,6 +208,11 @@ select:focus{border-color:var(--accent);}
         <div class="eo-name">OpenAI</div>
         <div class="eo-desc">Whisper-1<br>רב-שפתי, קבצים בלבד</div>
       </div>
+      <div class="engine-opt" id="opt-local" onclick="selectEngine('local')">
+        <div class="eo-icon">🆓</div>
+        <div class="eo-name">Whisper מקומי</div>
+        <div class="eo-desc">חינמי, בדפדפן<br>ללא API key</div>
+      </div>
     </div>
 
     <!-- API key (shown for engines that need it) -->
@@ -358,7 +363,7 @@ select:focus{border-color:var(--accent);}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let apiKey = '';
-let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram'
+let engine = 'elevenlabs'; // 'elevenlabs' | 'google' | 'deepgram' | 'ivrit' | 'openai' | 'local'
 let isRec = false;
 let ws = null;
 let audioCtx = null;
@@ -371,6 +376,7 @@ let commitTimer = null;
 let lastPartial = '';
 let reconnectAttempts = 0;
 let connectedOnce = false;
+let localWhisperPipeline = null;
 const MAX_RECONNECT = 3;
 const settings = { punct: true };
 
@@ -414,6 +420,7 @@ function selectEngine(e, silent) {
   document.getElementById('opt-deepgram').classList.toggle('selected', e === 'deepgram');
   document.getElementById('opt-ivrit').classList.toggle('selected', e === 'ivrit');
   document.getElementById('opt-openai').classList.toggle('selected', e === 'openai');
+  document.getElementById('opt-local').classList.toggle('selected', e === 'local');
   const needsKey = (e === 'elevenlabs' || e === 'deepgram' || e === 'ivrit' || e === 'openai');
   document.getElementById('apiSection').style.display = needsKey ? '' : 'none';
   // Update API section content per engine
@@ -466,12 +473,13 @@ function updateUI() {
   const isDG = engine === 'deepgram';
   const isIvrit = engine === 'ivrit';
   const isOpenAI = engine === 'openai';
+  const isLocal = engine === 'local';
   const needsKey = isEL || isDG || isIvrit || isOpenAI;
-  const fileOnly = isIvrit || isOpenAI;
-  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI' };
+  const fileOnly = isIvrit || isOpenAI || isLocal;
+  const badgeNames = { elevenlabs: 'ElevenLabs', deepgram: 'Deepgram', google: 'Google', ivrit: 'ivrit.ai', openai: 'OpenAI', local: 'Whisper מקומי' };
   document.getElementById('engineBadge').textContent = badgeNames[engine] || engine;
   document.getElementById('apiKeyCard').style.display = needsKey ? '' : 'none';
-  document.getElementById('uploadCard').style.display = needsKey ? '' : 'none';
+  document.getElementById('uploadCard').style.display = (needsKey || isLocal) ? '' : 'none';
   if (isEL) {
     document.getElementById('apiKeyCardHead').textContent = '🔑 ElevenLabs API Key';
     document.getElementById('modelInfo').innerHTML = 'מודל: <strong>scribe_v2_realtime</strong><br>קבצים: <strong>scribe_v2</strong>';
@@ -509,7 +517,7 @@ function togField(field, btnId) {
 
 // ── MIC ────────────────────────────────────────────────────────────────────
 function toggleRec() {
-  if (engine === 'ivrit' || engine === 'openai') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
+  if (engine === 'ivrit' || engine === 'openai' || engine === 'local') { showToast('⚠️ מנוע זה תומך בהעלאת קובץ בלבד', 'err'); return; }
   if ((engine === 'elevenlabs' || engine === 'deepgram') && !apiKey) { openOverlay(); return; }
   isRec ? stopRec() : startRec();
 }
@@ -809,7 +817,7 @@ function onDrop(e) {
 function onFileSelect(e) { const f = e.target.files[0]; if(f) uploadFile(f); e.target.value=''; }
 
 async function uploadFile(file) {
-  if (!apiKey) { openOverlay(); return; }
+  if (!apiKey && engine !== 'local') { openOverlay(); return; }
   const MAX_MB = 200;
   if (file.size > MAX_MB * 1024 * 1024) { showToast(`❌ קובץ גדול מדי (מקסימום ${MAX_MB}MB)`, 'err'); return; }
 
@@ -881,6 +889,54 @@ async function uploadFile(file) {
       }
       const data = await res.json();
       text = data.text || '';
+    } else if (engine === 'local') {
+      // ── LOCAL WHISPER (Transformers.js — runs entirely in the browser) ──
+      if (!localWhisperPipeline) {
+        stat.textContent = '⬇️ מוריד מודל Whisper (פעם ראשונה בלבד)…';
+        bar.style.width = '5%';
+        try {
+          const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2/dist/transformers.min.js');
+          env.allowLocalModels = false;
+          env.useBrowserCache = true;
+          localWhisperPipeline = await pipeline(
+            'automatic-speech-recognition',
+            'Xenova/whisper-tiny',
+            {
+              progress_callback: (p) => {
+                if (p.status === 'downloading' && typeof p.progress === 'number') {
+                  const pct = Math.round(p.progress);
+                  stat.textContent = `⬇️ מוריד מודל: ${pct}%`;
+                  bar.style.width = Math.min(pct * 0.4, 40) + '%';
+                }
+              }
+            }
+          );
+        } catch (importErr) {
+          throw new Error('לא הצליח לטעון מודל: ' + importErr.message);
+        }
+      }
+      stat.textContent = 'מפענח אודיו…';
+      bar.style.width = '50%';
+      const arrBuf = await file.arrayBuffer();
+      const tempCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      let audioData;
+      try {
+        const decoded = await tempCtx.decodeAudioData(arrBuf);
+        audioData = decoded.getChannelData(0);
+      } finally {
+        tempCtx.close().catch(() => {});
+      }
+      stat.textContent = 'מתמלל (עשוי לקחת כמה דקות)…';
+      bar.style.width = '65%';
+      const whisperLangMap = { heb: 'hebrew', ara: 'arabic', eng: 'english', rus: 'russian', fra: 'french' };
+      const wLang = whisperLangMap[document.getElementById('langSel').value] || 'hebrew';
+      const result = await localWhisperPipeline(audioData, {
+        language: wLang,
+        task: 'transcribe',
+        chunk_length_s: 30,
+        stride_length_s: 5,
+      });
+      text = result.text || '';
     } else {
       stat.textContent = 'שולח ל-ElevenLabs…';
       const form = new FormData();
