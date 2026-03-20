@@ -37,3 +37,7 @@ The application is lightweight, with no heavy third-party dependencies, built en
 
 ---
 *This project was created to provide a high-quality, accessible, and fast solution for all needs regarding voice typing and audio transcription to Hebrew and other languages.*
+
+## 📄 License
+
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
