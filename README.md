@@ -1,39 +1,39 @@
-# ✍️ כתיבה קולית (Speech-to-Text)
+# ✍️ Speech-to-Text
 
-[**🌐 לחץ כאן למעבר לאפליקציה**](https://moyshiginzburg.github.io/speech-to-text/)
+[**🌐 Click here to access the app**](https://moyshiginzburg.github.io/speech-to-text/)
 
-מערכת כתיבה קולית מתקדמת, המאפשרת הכתבה בזמן אמת ותמלול קבצי שמע לטקסט דרך הדפדפן, בדגש על השפה העברית.
-האפליקציה פועלת ישירות ללא התקנה ומאובטחת לחלוטין - מפתחות ה-API שלכם נשמרים מקומית על הדפדפן בלבד.
+An advanced speech-to-text system, enabling real-time dictation and audio file transcription via the browser, with an emphasis on the Hebrew language.
+The application runs directly without installation and is completely secure - your API keys are saved locally on your browser only.
 
-## ✨ תכונות עיקריות
+## ✨ Main Features
 
-- **הכתבה רציפה בזמן אמת:** פשוט ללחוץ על המיקרופון ולהתחיל לדבר.
-- **תמלול קבצים (Upload):** תמיכה בהעלאת קבצי שמע ווידאו (MP3, WAV, M4A, OGG ועוד) לתמלול אוטומטי.
-- **תמיכה במגוון מנועי תמלול מובילים:**
-  - ⚡ **ElevenLabs** (Scribe v2 Realtime) - הדור הבא של זיהוי דיבור, מהיר ומדויק מאוד (דורש API Key).
-  - 🎯 **Deepgram** (Nova-3) - אלטרנטיבה מהירה ומדויקת בזמן אמת (דורש API Key).
-  - 🔍 **Google Web Speech API** - חינמי, פועל בדפדפן כרום בלבד.
-  - 🇮🇱 **ivrit.ai** (Whisper) - תמלול מבוסס מודל Whisper שאומן במיוחד לעברית (קבצים בלבד, דורש Token ב-HuggingFace).
-  - 🤖 **OpenAI** (Whisper-1) - זיהוי קולי רב-שפתי אמין מבית OpenAI (קבצים בלבד).
-  - ☁️ **Azure Speech-to-Text** - שירות זיהוי דיבור של Microsoft Azure, דיוק גבוה ותמיכה במגוון שפות (קבצים בלבד, דורש API Key + אזור Azure).
-  - ✨ **Gemini** (Google AI) - תמלול באמצעות מודל השפה Gemini של Google, כולל סימני פיסוק וירידות שורה (קבצים בלבד, דורש API Key).
-  - 🆓 **Whisper מקומי** (Transformers.js) - מריץ את מודל Whisper-Tiny ישירות בדפדפן ללא שום API Key ובחינם לגמרי. המודל (~77MB) מורד פעם אחת ונשמר במטמון. מתאים להעלאת קבצים, עם מגבלה על מהירות העיבוד (קבצים בלבד).
-- **ממשק משתמש אלגנטי ופרקטי:** חלון עריכה נוח, כלי מעקב סטטיסטיקות (ספירת מילים, תווים, זמן הכתבה) ואפשרות עריכה נוחה.
-- **העתקה והורדה מהירה:** קליק אחד כדי להעתיק את הטקסט או להורידו קובץ טקסט למחשב.
+- **Continuous Real-Time Dictation:** Simply click the microphone and start speaking.
+- **File Transcription (Upload):** Support for uploading audio and video files (MP3, WAV, M4A, OGG, etc.) for automatic transcription.
+- **Support for A Variety of Leading Transcription Engines:**
+  - ⚡ **ElevenLabs** (Scribe v2 Realtime) - Next-generation speech recognition, extremely fast and accurate (Requires API Key).
+  - 🎯 **Deepgram** (Nova-3) - A fast and accurate real-time alternative (Requires API Key).
+  - 🔍 **Google Web Speech API** - Free, works only in the Chrome browser.
+  - 🇮🇱 **ivrit.ai** (Whisper) - Transcription based on a Whisper model trained specifically for Hebrew (Files only, requires Token in HuggingFace).
+  - 🤖 **OpenAI** (Whisper-1) - Reliable multilingual voice recognition from OpenAI (Files only).
+  - ☁️ **Azure Speech-to-Text** - Microsoft Azure speech recognition service, high accuracy and multi-language support (Files only, requires API Key + Azure Region).
+  - ✨ **Gemini** (Google AI) - Transcription using Google's Gemini language model, including punctuation and line breaks (Files only, requires API Key).
+  - 🆓 **Local Whisper** (Transformers.js) - Runs the Whisper-Tiny model directly in the browser without any API Key and completely free. The model (~77MB) is downloaded once and cached. Suitable for uploading files, with processing speed limitations (Files only).
+- **Elegant and Practical User Interface:** A convenient editing window, statistics tracking tools (word count, character count, dictation time), and easy editing options.
+- **Quick Copy and Download:** One click to copy the text or download it as a text file to your computer.
 
-## 🚀 איך מתחילים?
+## 🚀 How to Get Started?
 
-1. היכנסו ל-[**אפליקציה המאוחסנת ב-GitHub Pages**](https://moyshiginzburg.github.io/speech-to-text/).
-2. בחרו את מנוע התמלול שאיתו תרצו לעבוד.
-3. במידת הצורך (ElevenLabs / Deepgram / OpenAI / ivrit.ai / Azure / Gemini), הזינו את מפתח ה-API שלכם. המפתח נשמר בצורה מאובטחת בסביבת הדפדפן וזמין רק עבור הבקשות שלכם מול השרתים הרלוונטיים.
-4. לחצו על כפתור המיקרופון 🎙️ כדי להתחיל הכתבה זמן-אמת, או לחלופין גררו קובץ ליעד המסומן 📁.
-5. תהנו מכתיבה קולית מדויקת ופשוטה ללא מאמץ!
+1. Go to the [**App Hosted on GitHub Pages**](https://moyshiginzburg.github.io/speech-to-text/).
+2. Select the transcription engine you want to work with.
+3. If necessary (ElevenLabs / Deepgram / OpenAI / ivrit.ai / Azure / Gemini), enter your API key. The key is stored securely in the browser environment and is only available for your requests to the relevant servers.
+4. Click the microphone button 🎙️ to start real-time dictation, or alternatively drag a file to the designated area 📁.
+5. Enjoy accurate and simple voice typing effortlessly!
 
-## 🛠️ טכנולוגיות ומבנה
-האפליקציה שוקלת נמוך, וללא תלויות במערכות צד-שלישי כבדות, הבנויה כולה בעזרת:
-- **Vanilla Web Technologies:** נכתבה ב-HTML5, CSS מודרני (כולל משתנים, Flexbox) ו-JavaScript נקי ללא ספריות חיצוניות (Zero dependencies).
-- **Web Audio API & WebSockets:** קליטת האודיו ברמת Bits דרך המיקרופון והעברתו ישירות לתמלול דרך סטרימינג לייב עם WebSockets לביצוע אופטימלי (ElevenLabs ו-Deepgram).
-- **עיצוב מותאם:** חוויה רספונסיבית מעוצבת באופן נקי ומוקפד עם תמיכה מלאה במובייל ומסכים רחבים.
+## 🛠️ Technologies and Structure
+The application is lightweight, with no heavy third-party dependencies, built entirely using:
+- **Vanilla Web Technologies:** Written in HTML5, modern CSS (including variables, Flexbox), and clean JavaScript without external libraries (Zero dependencies).
+- **Web Audio API & WebSockets:** Capturing audio at the bit level through the microphone and transmitting it directly for transcription via live streaming with WebSockets for optimal performance (ElevenLabs and Deepgram).
+- **Responsive Design:** A clean, meticulously designed responsive experience with full support for mobile and wide screens.
 
 ---
-*פרויקט זה נוצר במטרה לספק מענה איכותי, נגיש ומהיר לכל צורך של כתיבה קולית ותמלול אודיו לעברית ולשפות נוספות.*
+*This project was created to provide a high-quality, accessible, and fast solution for all needs regarding voice typing and audio transcription to Hebrew and other languages.*
